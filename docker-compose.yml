@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  base_datos_glancd:
+    image: postgres:15-alpine
+    container_name: glancd_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: administrador
+      POSTGRES_PASSWORD: clave_secreta_123
+      POSTGRES_DB: glancd_db
+    ports:
+      - "5433:5432" # Usamos el puerto 5433 para evitar choques con instalaciones viejas
+    volumes:
+      - datos_postgres:/var/lib/postgresql/data
+
+volumes:
+  datos_postgres:
