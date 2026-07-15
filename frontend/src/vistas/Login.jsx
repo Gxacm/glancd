@@ -34,7 +34,11 @@ const Login = () => {
 
       // Redirigir al Dashboard de forma automática después de 1.5 segundos para que vean el mensaje de éxito
       setTimeout(() => {
-        navigate('/dashboard');
+        if (respuesta.data.usuario.rol === 'administrador') {
+          navigate('/dashboard-admin'); // Si es admin, va a su panel especial
+        } else {
+          navigate('/dashboard'); // Si es usuario común, va al panel estándar
+        }
       }, 1500);
       // ===================================================================
 
