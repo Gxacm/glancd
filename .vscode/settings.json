@@ -1,0 +1,8 @@
+{
+  "python.analysis.extraPaths": [
+    "./ms-libros"
+  ],
+  "pylint.args": [
+    "--init-hook=import sys; sys.path.insert(0, './ms-libros')"
+  ]
+}
