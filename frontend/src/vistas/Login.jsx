@@ -1,8 +1,10 @@
 // frontend/src/vistas/Login.jsx
+import { useNavigate } from 'react-router-dom';
 import React, { useState } from 'react';
 import axios from 'axios';
 
 const Login = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [contrasena, setContrasena] = useState('');
   const [error, setError] = useState('');
@@ -22,14 +24,19 @@ const Login = () => {
         contrasena: contrasena
       });
 
-      // Guardamos el token JWT de la rúbrica en el almacenamiento local del navegador
+      // Guardamos el token JWT en el navegador
       localStorage.setItem('token_glancd', respuesta.data.token);
+      
+      // === AQUÍ APLICAMOS EL NUEVO CÓDIGO QUE REEMPLAZA AL CONSOLE.LOG ===
       localStorage.setItem('usuario_glancd', JSON.stringify(respuesta.data.usuario));
 
       setMensajeExito(`¡Bienvenido/a, ${respuesta.data.usuario.nombre}! Login correcto.`);
-      
-      // Aquí redirigiremos al Dashboard en el siguiente paso
-      console.log("Token guardado:", respuesta.data.token);
+
+      // Redirigir al Dashboard de forma automática después de 1.5 segundos para que vean el mensaje de éxito
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 1500);
+      // ===================================================================
 
     } catch (err) {
       if (err.response && err.response.data) {

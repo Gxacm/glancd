@@ -54,7 +54,7 @@ const login = async (req, res) => {
     }
 
     // Comparar la contraseña ingresada con la encriptada en la BD
-    const contrasenaValida = await bcrypt.compare(contrasena, usuario.contrasena_hash);
+    const contrasenaValida = await bcrypt.compare(contrasena, usuario.contrasena);
     if (!contrasenaValida) {
       return res.status(400).json({ mensaje: 'Credenciales inválidas (Contraseña incorrecta).' });
     }

@@ -1,13 +1,20 @@
 // frontend/src/App.jsx
 import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './vistas/Login';
+import Dashboard from './vistas/Dashboard';
 
 function App() {
   return (
-    <div>
-      <h1 style={{ textAlign: 'center', color: '#333' }}>Ecosistema de Microservicios GLANCD</h1>
-      <Login />
-    </div>
+    <Router>
+      <Routes>
+        {/* Ruta raíz: Muestra la pantalla de inicio de sesión */}
+        <Route path="/" element={<Login />} />
+        
+        {/* Ruta del panel: Muestra el dashboard del usuario */}
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </Router>
   );
 }
 
