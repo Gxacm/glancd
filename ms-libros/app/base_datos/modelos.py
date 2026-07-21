@@ -1,18 +1,30 @@
 # app/base_datos/modelos.py
-import uuid
-from sqlalchemy import Column, String, Text, Integer, ForeignKey, DateTime
+from sqlalchemy import Column, String, Integer, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from app.base_datos.conexion import Base
+
+class AutorModelo(Base):
+    __tablename__ = "autores"
+
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    nombre = Column(String, nullable=False)
+    biografia = Column(Text, nullable=True)
+    url_foto = Column(String, nullable=True)
+    
+    # Quitamos 'nacionalidad' ya que no existe en tu tabla de Postgres
+    libros = relationship("LibroModelo", back_populates="autor")
+
 
 class LibroModelo(Base):
     __tablename__ = "libros"
 
-    # Mapeo exacto de las 8 columnas de la captura
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    titulo = Column(String(255), nullable=False)
-    autor_id = Column(UUID(as_uuid=True), nullable=True) # ID de la tabla autores
+    id = Column(UUID(as_uuid=True), primary_key=True)
+    titulo = Column(String, nullable=False)
+    autor_id = Column(UUID(as_uuid=True), ForeignKey("autores.id"), nullable=True)
     sinopsis = Column(Text, nullable=True)
-    url_portada = Column(String(255), nullable=True)
-    genero_id = Column(Integer, nullable=True) # ID de la tabla generos
+    url_portada = Column(String, nullable=True)
+    genero_id = Column(Integer, nullable=True)
     edad_objetivo = Column(Integer, nullable=True)
-    creado_en = Column(DateTime, nullable=True)
+
+    autor = relationship("AutorModelo", back_populates="libros")
