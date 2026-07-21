@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.base_datos.conexion import Base
 
+
 class AutorModelo(Base):
     __tablename__ = "autores"
 
@@ -11,8 +12,7 @@ class AutorModelo(Base):
     nombre = Column(String, nullable=False)
     biografia = Column(Text, nullable=True)
     url_foto = Column(String, nullable=True)
-    
-    # Quitamos 'nacionalidad' ya que no existe en tu tabla de Postgres
+
     libros = relationship("LibroModelo", back_populates="autor")
 
 

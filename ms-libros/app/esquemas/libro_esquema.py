@@ -9,6 +9,14 @@ class AutorSimpleResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+# 🆕 Esquema para los datos recibidos al Crear/Editar
+class LibroCreate(BaseModel):
+    titulo: str
+    sinopsis: Optional[str] = None
+    url_portada: Optional[str] = None
+    edad_objetivo: Optional[int] = 0
+    autor_id: Optional[UUID] = None
+
 class LibroResponse(BaseModel):
     id: UUID
     titulo: str
