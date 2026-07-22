@@ -134,3 +134,14 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+
+# Entornos virtuales (evita subirlos)
+venv/
+.venv/
+**/venv/
+**/.venv/
+
+# Node modules y configuraciones locales
+node_modules/
+.env
