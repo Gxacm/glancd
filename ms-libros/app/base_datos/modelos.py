@@ -1,30 +1,41 @@
 # app/base_datos/modelos.py
-from sqlalchemy import Column, String, Integer, ForeignKey, Text
+from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from datetime import datetime  # 👈 Importamos datetime nativo de Python
 from app.base_datos.conexion import Base
+import uuid
 
+class GeneroModelo(Base):
+    __tablename__ = "generos"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    nombre = Column(String(50), nullable=False)
+    edad_minima = Column(Integer, nullable=True)
 
 class AutorModelo(Base):
     __tablename__ = "autores"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    nombre = Column(String, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    nombre = Column(String(100), nullable=False)
+    apellido = Column(String(100), nullable=True)
     biografia = Column(Text, nullable=True)
-    url_foto = Column(String, nullable=True)
-
+    url_foto = Column(String(255), nullable=True)
+    creado_en = Column(DateTime, default=datetime.now)  # 👈 Sin paréntesis
+    
     libros = relationship("LibroModelo", back_populates="autor")
-
 
 class LibroModelo(Base):
     __tablename__ = "libros"
 
-    id = Column(UUID(as_uuid=True), primary_key=True)
-    titulo = Column(String, nullable=False)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    titulo = Column(String(255), nullable=False)
     autor_id = Column(UUID(as_uuid=True), ForeignKey("autores.id"), nullable=True)
     sinopsis = Column(Text, nullable=True)
-    url_portada = Column(String, nullable=True)
-    genero_id = Column(Integer, nullable=True)
+    url_portada = Column(String(255), nullable=True)
+    genero_id = Column(Integer, ForeignKey("generos.id"), nullable=True)
     edad_objetivo = Column(Integer, nullable=True)
+    creado_en = Column(DateTime, default=datetime.now)  # 👈 Sin paréntesis
 
     autor = relationship("AutorModelo", back_populates="libros")
+    genero = relationship("GeneroModelo")

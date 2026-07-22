@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .rutas import libro_rutas
+from app.rutas import catalogos_rutas
 
 app = FastAPI(title="Microservicio de Libros - GLANCD")
 
@@ -16,6 +17,7 @@ app.add_middleware(
 
 # Conectamos las rutas de libros al servidor principal
 app.include_router(libro_rutas.router)
+app.include_router(catalogos_rutas.router, prefix="/api", tags=["Catalogos"])
 
 @app.get("/")
 def home():
