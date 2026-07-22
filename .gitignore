@@ -145,3 +145,7 @@ venv/
 # Node modules y configuraciones locales
 node_modules/
 .env
+
+# Archivos compilados de Python
+__pycache__/
+*.pyc

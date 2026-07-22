@@ -1,6 +1,5 @@
-// frontend/src/vistas/Login.jsx
 import { useNavigate } from 'react-router-dom';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 
 const Login = () => {
@@ -10,82 +9,57 @@ const Login = () => {
   const [error, setError] = useState('');
   const [mensajeExito, setMensajeExito] = useState('');
 
-  const manejarLogin = async (e) => {
-    e.preventDefault();
+  const manejarLogin = async (event) => {
+    event.preventDefault();
     setError('');
     setMensajeExito('');
 
     try {
-      // Consumimos la URL guardada en el .env del frontend
-      const url = import.meta.env.VITE_API_USUARIOS + '/login';
-      
-      const respuesta = await axios.post(url, {
-        email: email,
-        contrasena: contrasena
-      });
-
-      // Guardamos el token JWT en el navegador
+      const respuesta = await axios.post(`${import.meta.env.VITE_API_USUARIOS}/login`, { email, contrasena });
       localStorage.setItem('token_glancd', respuesta.data.token);
-      
-      // === AQUÍ APLICAMOS EL NUEVO CÓDIGO QUE REEMPLAZA AL CONSOLE.LOG ===
       localStorage.setItem('usuario_glancd', JSON.stringify(respuesta.data.usuario));
-
-      setMensajeExito(`¡Bienvenido/a, ${respuesta.data.usuario.nombre}! Login correcto.`);
-
-      // Redirigir al Dashboard de forma automática después de 1.5 segundos para que vean el mensaje de éxito
-      setTimeout(() => {
-        if (respuesta.data.usuario.rol === 'administrador') {
-          navigate('/dashboard-admin'); // Si es admin, va a su panel especial
-        } else {
-          navigate('/dashboard'); // Si es usuario común, va al panel estándar
-        }
-      }, 1500);
-      // ===================================================================
-
+      setMensajeExito(`Bienvenido/a, ${respuesta.data.usuario.nombre}.`);
+      window.setTimeout(() => navigate(respuesta.data.usuario.rol === 'administrador' ? '/dashboard-admin' : '/dashboard'), 700);
     } catch (err) {
-      if (err.response && err.response.data) {
-        setError(err.response.data.mensaje);
-      } else {
-        setError('No se pudo conectar con el servidor de autenticación.');
-      }
+      setError(err.response?.data?.mensaje || 'No fue posible conectar con el servicio de autenticación.');
     }
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px', border: '1px solid #ccc', borderRadius: '8px' }}>
-      <h2>Iniciar Sesión - GLANCD</h2>
-      
-      {error && <p style={{ color: 'red' }}>⚠️ {error}</p>}
-      {mensajeExito && <p style={{ color: 'green' }}>✅ {mensajeExito}</p>}
-
-      <form onSubmit={manejarLogin}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Correo Electrónico:</label>
-          <input 
-            type="email" 
-            value={email} 
-            onChange={(e) => setEmail(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          />
+    <main className="login-page">
+      <section className="login-story" aria-label="Presentación de Glancd">
+        <a className="brand brand-light" href="/">glancd<span>.</span></a>
+        <div className="login-story-copy">
+          <p className="eyebrow">Tu próxima gran lectura</p>
+          <h1>Una biblioteca<br />hecha para sentir.</h1>
+          <p>Guarda historias, comparte lo que te dejaron y encuentra tu siguiente libro favorito en un espacio tranquilo.</p>
         </div>
+        <div className="quote-card"><span>“</span>Los libros son espejos: solo se ve en ellos lo que uno ya lleva dentro.</div>
+      </section>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px' }}>Contraseña:</label>
-          <input 
-            type="password" 
-            value={contrasena} 
-            onChange={(e) => setContrasena(e.target.value)} 
-            required 
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
-          />
+      <section className="login-panel">
+        <div className="login-form-wrap">
+          <a className="brand brand-mobile" href="/">glancd<span>.</span></a>
+          <p className="eyebrow">Bienvenido de vuelta</p>
+          <h2>Entra a tu rincón de lectura.</h2>
+          <p className="form-intro">Tus listas, reseñas y próximos capítulos te están esperando.</p>
+
+          {error && <div className="notice notice-error" role="alert">{error}</div>}
+          {mensajeExito && <div className="notice notice-success" role="status">{mensajeExito}</div>}
+
+          <form className="auth-form" onSubmit={manejarLogin}>
+            <label>Correo electrónico
+              <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="tu@correo.com" required />
+            </label>
+            <label>Contraseña
+              <input type="password" value={contrasena} onChange={(event) => setContrasena(event.target.value)} placeholder="Tu contraseña" required />
+            </label>
+            <button className="button button-primary button-full" type="submit">Continuar a mi biblioteca <span>→</span></button>
+          </form>
+          <p className="form-footer">Un lugar para leer despacio y recordar siempre.</p>
         </div>
-
-        <button type="submit" style={{ width: '100%', padding: '10px', backgroundColor: '#007BFF', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
-          Ingresar al Sistema
-        </button>
-      </form>
-    </div>
+      </section>
+    </main>
   );
 };
 
