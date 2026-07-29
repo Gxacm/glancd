@@ -5,7 +5,7 @@ from uuid import UUID
 
 class AutorSimpleResponse(BaseModel):
     id: UUID
-    nombre: str
+    nombre_completo: str
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -15,7 +15,13 @@ class LibroCreate(BaseModel):
     sinopsis: Optional[str] = None
     url_portada: Optional[str] = None
     edad_objetivo: Optional[int] = 0
-    autor_id: Optional[UUID] = None
+    nombre_autor: str 
+    fecha_publicacion: Optional[str] = None
+    cantidad_paginas: Optional[int] = 0
+    isbn: Optional[str] = None
+    clasificacion_madurez: Optional[str] = None
+    proveedor_origen: Optional[str] = None
+    google_id: Optional[str] = None
 
 class LibroResponse(BaseModel):
     id: UUID

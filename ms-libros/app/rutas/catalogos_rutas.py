@@ -32,8 +32,7 @@ def obtener_autores(db: Session = Depends(get_db)):
 @router.post("/autores/", response_model=catalogos_esquemas.AutorOut)
 def crear_autor(autor: catalogos_esquemas.AutorCreate, db: Session = Depends(get_db)):
     nuevo_autor = AutorModelo(
-        nombre=autor.nombre,
-        apellido=autor.apellido,
+        nombre_completo=autor.nombre_completo,
         biografia=autor.biografia,
         url_foto=autor.url_foto
     )

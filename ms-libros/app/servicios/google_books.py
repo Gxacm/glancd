@@ -1,0 +1,90 @@
+# app/servicios/google_books.py
+import requests
+import os
+from dotenv import load_dotenv
+
+# Cargar las variables del .env para obtener la API Key
+load_dotenv()
+API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
+
+def buscar_libros(query: str):
+    """
+    Busca libros en Google Books (Principal). 
+    Si falla, utiliza Open Library como respaldo (Fallback).
+    """
+    
+    # ==========================================
+    # 1. INTENTO PRINCIPAL: GOOGLE BOOKS API
+    # ==========================================
+    url_google = f"https://www.googleapis.com/books/v1/volumes?q={query}"
+    if API_KEY:
+        url_google += f"&key={API_KEY}"
+        
+    try:
+        # Hacemos la petición a Google con un tiempo máximo de espera de 5 segundos
+        respuesta_google = requests.get(url_google, timeout=5)
+        respuesta_google.raise_for_status()
+        datos_google = respuesta_google.json()
+        
+        if "items" in datos_google:
+            resultados = []
+            for item in datos_google["items"]:
+                info = item.get("volumeInfo", {})
+                
+                # --- HACK DE ALTA CALIDAD PARA GOOGLE BOOKS ---
+                url_portada = info.get("imageLinks", {}).get("thumbnail", "").replace("http:", "https:")
+                if url_portada:
+                    # Cambiamos el zoom a 3 (alta resolución) y quitamos el efecto de página doblada
+                    url_portada = url_portada.replace("zoom=1", "zoom=3").replace("&edge=curl", "")
+                
+                resultados.append({
+                    "origen": "Google Books",
+                    "google_id": item.get("id"),
+                    "titulo": info.get("title", "Sin título"),
+                    "nombre_autor": info.get("authors", ["Autor Desconocido"])[0],
+                    "sinopsis": info.get("description", ""),
+                    "fecha_publicacion": info.get("publishedDate", ""),
+                    "cantidad_paginas": info.get("pageCount", 0),
+                    "url_portada": url_portada
+                })
+            return resultados
+            
+    except Exception as e:
+        # Si Google falla por cualquier motivo, imprimimos el error en consola y continuamos
+        print(f"⚠️ Google Books falló ({e}). Cambiando a Open Library...")
+
+    # ==========================================
+    # 2. INTENTO DE RESPALDO: OPEN LIBRARY API
+    # ==========================================
+    url_open = f"https://openlibrary.org/search.json?q={query}&limit=5"
+    try:
+        respuesta_open = requests.get(url_open, timeout=5)
+        respuesta_open.raise_for_status()
+        datos_open = respuesta_open.json()
+        
+        if "docs" in datos_open:
+            resultados = []
+            for doc in datos_open["docs"]:
+                # Generar la URL de la portada si existe el ID (ya está en alta calidad con -L.jpg)
+                cover_id = doc.get("cover_i")
+                url_portada_open = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg" if cover_id else ""
+                
+                resultados.append({
+                    "origen": "Open Library",
+                    "google_id": doc.get("key", ""), # Open Library usa "key"
+                    "titulo": doc.get("title", "Sin título"),
+                    "nombre_autor": doc.get("author_name", ["Autor Desconocido"])[0] if doc.get("author_name") else "Autor Desconocido",
+                    "sinopsis": "", # Open Library casi no provee sinopsis
+                    "fecha_publicacion": str(doc.get("first_publish_year", "")),
+                    "cantidad_paginas": doc.get("number_of_pages_median", 0),
+                    "url_portada": url_portada_open
+                })
+            return resultados
+            
+    except Exception as e:
+        print(f"⚠️ Open Library también falló: {e}")
+
+    # ==========================================
+    # 3. SI AMBAS APIS FALLAN
+    # ==========================================
+    return []

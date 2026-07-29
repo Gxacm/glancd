@@ -4,5 +4,6 @@
   ],
   "pylint.args": [
     "--init-hook=import sys; sys.path.insert(0, './ms-libros')"
-  ]
+  ],
+  "python-envs.defaultEnvManager": "ms-python.python:system"
 }

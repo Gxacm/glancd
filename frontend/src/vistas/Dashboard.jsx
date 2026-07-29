@@ -46,7 +46,7 @@ const Dashboard = () => {
           {!cargando && !error && <div className="book-grid">
             {libros.map((libro, index) => <article className="book-card" key={libro.id}>
               <div className={`book-cover cover-${(index % 4) + 1}`}>{libro.url_portada ? <img src={libro.url_portada} alt={`Portada de ${libro.titulo}`} /> : <span>{libro.titulo?.slice(0, 1)}</span>}</div>
-              <div className="book-info"><p className="book-author">{libro.autor?.nombre || 'Autor por descubrir'}</p><h3>{libro.titulo}</h3><p className="book-synopsis">{libro.sinopsis || 'Una nueva historia esperándote en el catálogo.'}</p><div className="book-meta"><span>{libro.genero?.nombre || 'Lectura'}</span><button aria-label={`Guardar ${libro.titulo}`} className="save-book">♡</button></div></div>
+              <div className="book-info"><p className="book-author">{libro.autor?.nombre_completo || 'Autor por descubrir'}</p><h3>{libro.titulo}</h3><p className="book-synopsis">{libro.sinopsis || 'Una nueva historia esperándote en el catálogo.'}</p><div className="book-meta"><span>{libro.genero?.nombre || 'Lectura'}</span><button aria-label={`Guardar ${libro.titulo}`} className="save-book">♡</button></div></div>
             </article>)}
           </div>}
         </section>

@@ -15,8 +15,7 @@ class GeneroOut(GeneroCreate):
 
 # --- ESQUEMAS DE AUTORES ---
 class AutorCreate(BaseModel):
-    nombre: str
-    apellido: Optional[str] = None
+    nombre_completo: str
     biografia: Optional[str] = None
     url_foto: Optional[str] = None
 

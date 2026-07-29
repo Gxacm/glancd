@@ -2,7 +2,7 @@
 from sqlalchemy import Column, String, Integer, ForeignKey, Text, DateTime
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
-from datetime import datetime  # 👈 Importamos datetime nativo de Python
+from datetime import datetime 
 from app.base_datos.conexion import Base
 import uuid
 
@@ -17,12 +17,12 @@ class AutorModelo(Base):
     __tablename__ = "autores"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    nombre = Column(String(100), nullable=False)
-    apellido = Column(String(100), nullable=True)
+    nombre_completo = Column(String(200), nullable=False)
     biografia = Column(Text, nullable=True)
     url_foto = Column(String(255), nullable=True)
-    creado_en = Column(DateTime, default=datetime.now)  # 👈 Sin paréntesis
+    creado_en = Column(DateTime, default=datetime.now)
     
+    # Esta relación ahora funcionará perfectamente:
     libros = relationship("LibroModelo", back_populates="autor")
 
 class LibroModelo(Base):
@@ -30,12 +30,19 @@ class LibroModelo(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     titulo = Column(String(255), nullable=False)
-    autor_id = Column(UUID(as_uuid=True), ForeignKey("autores.id"), nullable=True)
     sinopsis = Column(Text, nullable=True)
     url_portada = Column(String(255), nullable=True)
-    genero_id = Column(Integer, ForeignKey("generos.id"), nullable=True)
     edad_objetivo = Column(Integer, nullable=True)
-    creado_en = Column(DateTime, default=datetime.now)  # 👈 Sin paréntesis
-
+    creado_en = Column(DateTime, default=datetime.now)
+    
+    # 👈 AQUÍ ESTÁ LA MAGIA: Conexión con la tabla autores
+    autor_id = Column(UUID(as_uuid=True), ForeignKey("autores.id"), nullable=False)
     autor = relationship("AutorModelo", back_populates="libros")
-    genero = relationship("GeneroModelo")
+    
+    # Campos adicionales del diagrama:
+    google_id = Column(String(255), nullable=True)
+    isbn = Column(String(50), unique=True, nullable=True)
+    cantidad_paginas = Column(Integer, nullable=True)
+    fecha_publicacion = Column(String(50), nullable=True)
+    clasificacion_madurez = Column(String(50), nullable=True)
+    proveedor_origen = Column(String(50), nullable=True)
