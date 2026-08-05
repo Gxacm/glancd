@@ -1,9 +1,10 @@
 # app/servicios/google_books.py
 import requests
 import os
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from dotenv import load_dotenv
 
-# Cargar las variables del .env para obtener la API Key
 load_dotenv()
 API_KEY = os.getenv("GOOGLE_BOOKS_API_KEY")
 
@@ -21,7 +22,6 @@ def buscar_libros(query: str):
         url_google += f"&key={API_KEY}"
         
     try:
-        # Hacemos la petición a Google con un tiempo máximo de espera de 5 segundos
         respuesta_google = requests.get(url_google, timeout=5)
         respuesta_google.raise_for_status()
         datos_google = respuesta_google.json()
@@ -34,7 +34,6 @@ def buscar_libros(query: str):
                 # --- HACK DE ALTA CALIDAD PARA GOOGLE BOOKS ---
                 url_portada = info.get("imageLinks", {}).get("thumbnail", "").replace("http:", "https:")
                 if url_portada:
-                    # Cambiamos el zoom a 3 (alta resolución) y quitamos el efecto de página doblada
                     url_portada = url_portada.replace("zoom=1", "zoom=3").replace("&edge=curl", "")
                 
                 resultados.append({
@@ -45,12 +44,11 @@ def buscar_libros(query: str):
                     "sinopsis": info.get("description", ""),
                     "fecha_publicacion": info.get("publishedDate", ""),
                     "cantidad_paginas": info.get("pageCount", 0),
-                    "url_portada": url_portada
+                    "url_portada": url_portada or "https://via.placeholder.com/180x260?text=Sin+Portada"
                 })
             return resultados
             
     except Exception as e:
-        # Si Google falla por cualquier motivo, imprimimos el error en consola y continuamos
         print(f"⚠️ Google Books falló ({e}). Cambiando a Open Library...")
 
     # ==========================================
@@ -65,26 +63,59 @@ def buscar_libros(query: str):
         if "docs" in datos_open:
             resultados = []
             for doc in datos_open["docs"]:
-                # Generar la URL de la portada si existe el ID (ya está en alta calidad con -L.jpg)
                 cover_id = doc.get("cover_i")
                 url_portada_open = f"https://covers.openlibrary.org/b/id/{cover_id}-L.jpg" if cover_id else ""
                 
                 resultados.append({
                     "origen": "Open Library",
-                    "google_id": doc.get("key", ""), # Open Library usa "key"
+                    "google_id": doc.get("key", ""),
                     "titulo": doc.get("title", "Sin título"),
                     "nombre_autor": doc.get("author_name", ["Autor Desconocido"])[0] if doc.get("author_name") else "Autor Desconocido",
-                    "sinopsis": "", # Open Library casi no provee sinopsis
+                    "sinopsis": "",
                     "fecha_publicacion": str(doc.get("first_publish_year", "")),
                     "cantidad_paginas": doc.get("number_of_pages_median", 0),
-                    "url_portada": url_portada_open
+                    "url_portada": url_portada_open or "https://via.placeholder.com/180x260?text=Sin+Portada"
                 })
             return resultados
             
     except Exception as e:
         print(f"⚠️ Open Library también falló: {e}")
 
-    # ==========================================
-    # 3. SI AMBAS APIS FALLAN
-    # ==========================================
     return []
+
+
+# ==========================================
+# NUEVAS FUNCIONES PARA RECOMENDACIONES POR GÉNERO
+# ==========================================
+
+def obtener_libros_por_genero(nombre_genero: str, clave_google: str = None):
+    """Busca libros para un género usando subject: e invocando buscar_libros."""
+    termino = clave_google if clave_google else nombre_genero
+    query = f"subject:{termino}"
+    
+    libros = buscar_libros(query)
+    
+    return {
+        "genero": nombre_genero,
+        "clave_google": clave_google or nombre_genero,
+        "libros": libros
+    }
+
+
+async def obtener_recomendaciones_multiples_generos(generos: list):
+    """Ejecuta búsquedas paralelas para múltiples géneros sin bloquear el hilo principal."""
+    loop = asyncio.get_running_loop()
+    
+    with ThreadPoolExecutor() as executor:
+        tareas = [
+            loop.run_in_executor(
+                executor, 
+                obtener_libros_por_genero, 
+                g.get("nombre"), 
+                g.get("clave_google")
+            )
+            for g in generos
+        ]
+        resultados = await asyncio.gather(*tareas)
+        
+    return resultados
