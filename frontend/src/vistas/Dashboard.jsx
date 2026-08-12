@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import Navegacion from '../componentes/Navegacion';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -40,97 +41,121 @@ const Dashboard = () => {
       .finally(() => setCargando(false));
   }, [navigate, urlBase]);
 
-  const cerrarSesion = () => { 
-    localStorage.clear(); 
-    navigate('/'); 
-  };
-
-  if (!usuario) return <div className="page-loading">Preparando tu biblioteca…</div>;
+  if (!usuario) {
+    return (
+      <div style={{ ...estilos.contenedorPagina, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+        <p style={{ color: '#8f9b95', fontSize: '1.2rem' }}>Preparando tu biblioteca…</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="app-shell">
-      {/* HEADER SUPERIOR */}
-      <header className="topbar">
-        <a className="brand" href="/dashboard">glancd<span>.</span></a>
-        <nav className="main-nav" aria-label="Navegación principal">
-          <a className="active" href="#explorar">Explorar</a>
-          <a href="#mi-biblioteca">Mi biblioteca</a>
-          <a href="#resenas">Reseñas</a>
-        </nav>
-        <div className="user-actions">
-          <span className="user-avatar">{usuario.nombre?.[0] || 'L'}</span>
-          <button className="button button-ghost" onClick={cerrarSesion}>Salir</button>
-        </div>
-      </header>
+    <div style={estilos.contenedorPagina}>
+      {/* ESTILOS GLOBALES Y HOVERS DEL DASHBOARD */}
+      <style>{`
+        .glancd-card-hover {
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .glancd-card-hover:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 12px 24px rgba(0,0,0,0.5);
+        }
+        /* Custom Scrollbar para el carrusel horizontal */
+        .scroll-container::-webkit-scrollbar {
+          height: 8px;
+        }
+        .scroll-container::-webkit-scrollbar-track {
+          background: rgba(15, 30, 25, 0.5); 
+          border-radius: 4px;
+        }
+        .scroll-container::-webkit-scrollbar-thumb {
+          background: rgba(143, 155, 149, 0.3); 
+          border-radius: 4px;
+        }
+        .scroll-container::-webkit-scrollbar-thumb:hover {
+          background: #e07a5f; 
+        }
+      `}</style>
 
-      <main className="content-wrap">
+      {/* AQUÍ INYECTAMOS TU NUEVO COMPONENTE DE NAVEGACIÓN */}
+      <Navegacion />
+
+      <main style={estilos.mainContent}>
         {/* WELCOME BANNER */}
-        <section className="welcome-banner">
+        <section style={estilos.welcomeBanner}>
           <div>
-            <p className="eyebrow">Tu espacio de lectura</p>
-            <h1>Hola, {usuario.nombre}.</h1>
-            <p>Descubre nuevas historias seleccionadas según tus géneros preferidos.</p>
+            <p style={estilos.sectionEyebrow}>TU ESPACIO DE LECTURA</p>
+            <h1 style={estilos.heroTitle}>Hola, {usuario.nombre}.</h1>
+            <p style={estilos.heroSubtitle}>Descubre nuevas historias seleccionadas según tus géneros preferidos.</p>
           </div>
-          <div className="banner-ornament" aria-hidden="true">✦</div>
+          <div style={estilos.bannerOrnament} aria-hidden="true">✦</div>
         </section>
 
         {/* CONTENIDO PRINCIPAL / ESTADOS */}
-        <section id="explorar" className="catalog-section">
-          {cargando && <div className="empty-state">Buscando los mejores libros para ti…</div>}
+        <section id="recomendaciones">
+          {cargando && (
+            <div style={estilos.emptyState}>Buscando los mejores libros para ti…</div>
+          )}
           
-          {error && <div className="notice notice-error">{error}</div>}
+          {error && (
+            <div style={{ ...estilos.notificacion, ...estilos.errorNotif }}>{error}</div>
+          )}
 
           {!cargando && !error && secciones.length === 0 && (
-            <div className="empty-state">
+            <div style={estilos.emptyState}>
               No encontramos géneros guardados. Completa tu perfil para recibir recomendaciones personalizadas.
             </div>
           )}
 
           {/* FILAS DE CARRUSELES POR GÉNERO */}
           {!cargando && !error && secciones.map((sec, sIndex) => (
-            <div key={sIndex} style={{ marginBottom: '40px' }}>
+            <div key={sIndex} style={{ marginBottom: '50px' }}>
               
               {/* ENCABEZADO DE SECCIÓN DE GÉNERO */}
-              <div className="section-heading" style={{ marginBottom: '16px' }}>
+              <div style={estilos.sectionHeaderContainer}>
                 <div>
-                  <p className="eyebrow">Porque te gusta</p>
-                  <h2 style={{ textTransform: 'capitalize' }}>{sec.genero}</h2>
+                  <p style={estilos.sectionEyebrow}>PORQUE TE GUSTA</p>
+                  <h2 style={{ ...estilos.sectionTitle, textTransform: 'capitalize' }}>
+                    {sec.genero}
+                  </h2>
                 </div>
-                <span className="catalog-count">{sec.libros?.length || 0} sugerencias</span>
+                <span style={estilos.catalogCount}>{sec.libros?.length || 0} sugerencias</span>
               </div>
 
               {/* CONTENEDOR CON SCROLL HORIZONTAL */}
-              <div style={{
-                display: 'flex',
-                gap: '20px',
-                overflowX: 'auto',
-                paddingBottom: '16px',
-                scrollBehavior: 'smooth'
-              }}>
+              <div className="scroll-container" style={estilos.scrollContainer}>
                 {sec.libros && sec.libros.map((libro, index) => (
                   <article 
-                    className="book-card" 
+                    className="glancd-card-hover" 
                     key={libro.google_id || index}
-                    style={{ minWidth: '220px', maxWidth: '220px', flexShrink: 0 }}
+                    style={estilos.cardLibro}
                   >
-                    <div className={`book-cover cover-${(index % 4) + 1}`}>
+                    <div style={estilos.coverContainer}>
                       {libro.url_portada ? (
-                        <img src={libro.url_portada} alt={`Portada de ${libro.titulo}`} />
+                        <img 
+                          src={libro.url_portada.replace('http:', 'https:')} 
+                          alt={`Portada de ${libro.titulo}`} 
+                          style={estilos.coverImage}
+                        />
                       ) : (
-                        <span>{libro.titulo?.slice(0, 1)}</span>
+                        <div style={estilos.coverFallback}>
+                          {libro.titulo?.slice(0, 1)}
+                        </div>
                       )}
                     </div>
                     
-                    <div className="book-info">
-                      <p className="book-author">{libro.nombre_autor || 'Autor por descubrir'}</p>
-                      <h3>{libro.titulo}</h3>
-                      <p className="book-synopsis">
+                    <div style={estilos.cardInfo}>
+                      <p style={estilos.libroAutor}>{libro.nombre_autor || 'Autor por descubrir'}</p>
+                      <h3 style={estilos.libroTitulo}>{libro.titulo}</h3>
+                      <p style={estilos.libroSinopsis}>
                         {libro.sinopsis ? libro.sinopsis : 'Una historia recomendada especialmente para tu biblioteca.'}
                       </p>
                       
-                      <div className="book-meta">
-                        <span>{libro.origen || 'Recomendación'}</span>
-                        <button aria-label={`Guardar ${libro.titulo}`} className="save-book">♡</button>
+                      <div style={estilos.cardMeta}>
+                        <span style={estilos.tagOrigen}>{libro.origen || 'Recomendación'}</span>
+                        <button style={estilos.saveBtn} aria-label={`Guardar ${libro.titulo}`}>
+                          ♡
+                        </button>
                       </div>
                     </div>
                   </article>
@@ -141,8 +166,43 @@ const Dashboard = () => {
           ))}
         </section>
       </main>
+      
+      {/* FOOTER */}
+      <footer style={estilos.footer}>
+        <p style={{ margin: 0 }}>glancd. — Un lugar para leer despacio y recordar siempre.</p>
+      </footer>
     </div>
   );
+};
+
+// ESTILOS LIMPIOS (Se quitaron los estilos del header viejo)
+const estilos = {
+  contenedorPagina: { backgroundColor: '#0f1e19', color: '#fbf9f1', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' },
+  mainContent: { padding: '40px 50px', maxWidth: '1400px', margin: '0 auto', flex: 1, width: '100%', boxSizing: 'border-box' },
+  welcomeBanner: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#162c25', padding: '40px 50px', borderRadius: '12px', border: '1px solid rgba(251, 249, 241, 0.08)', marginBottom: '50px', position: 'relative', overflow: 'hidden' },
+  heroTitle: { fontFamily: '"Georgia", serif', fontSize: '2.8rem', fontWeight: '700', margin: '10px 0', color: '#fbf9f1' },
+  heroSubtitle: { fontSize: '1.1rem', color: '#c2c8c5', margin: 0 },
+  bannerOrnament: { fontSize: '8rem', color: 'rgba(224, 122, 95, 0.05)', position: 'absolute', right: '-20px', bottom: '-40px', fontFamily: 'serif', userSelect: 'none' },
+  sectionHeaderContainer: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '20px', borderBottom: '1px solid rgba(251, 249, 241, 0.1)', paddingBottom: '12px' },
+  sectionEyebrow: { color: '#e07a5f', fontSize: '0.8rem', fontWeight: 'bold', letterSpacing: '1.5px', margin: 0 },
+  sectionTitle: { fontFamily: '"Georgia", serif', fontSize: '1.8rem', margin: '6px 0 0 0', color: '#fbf9f1' },
+  catalogCount: { fontSize: '0.85rem', color: '#8f9b95', fontWeight: '500' },
+  scrollContainer: { display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '20px', scrollBehavior: 'smooth' },
+  cardLibro: { backgroundColor: '#162c25', borderRadius: '8px', border: '1px solid rgba(251, 249, 241, 0.08)', minWidth: '220px', maxWidth: '220px', flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
+  coverContainer: { height: '320px', backgroundColor: '#0f1e19', position: 'relative' },
+  coverImage: { width: '100%', height: '100%', objectFit: 'cover' },
+  coverFallback: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', fontFamily: '"Georgia", serif', color: '#1f3d34', backgroundColor: '#0f1e19' },
+  cardInfo: { padding: '16px', display: 'flex', flexDirection: 'column', flex: 1 },
+  libroTitulo: { fontSize: '1rem', color: '#fbf9f1', margin: '0 0 8px 0', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
+  libroAutor: { fontSize: '0.8rem', color: '#e07a5f', margin: '0 0 6px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' },
+  libroSinopsis: { fontSize: '0.85rem', color: '#8f9b95', margin: '0 0 16px 0', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', flex: 1 },
+  cardMeta: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', borderTop: '1px solid rgba(251, 249, 241, 0.08)', paddingTop: '12px' },
+  tagOrigen: { fontSize: '0.75rem', color: '#8f9b95', backgroundColor: 'rgba(251, 249, 241, 0.05)', padding: '4px 8px', borderRadius: '4px' },
+  saveBtn: { background: 'none', border: 'none', color: '#8f9b95', fontSize: '1.2rem', cursor: 'pointer', transition: 'color 0.2s ease' },
+  emptyState: { textAlign: 'center', padding: '60px', color: '#8f9b95', backgroundColor: '#162c25', borderRadius: '8px', border: '1px dashed rgba(251, 249, 241, 0.2)', fontSize: '1.1rem' },
+  notificacion: { padding: '16px', borderRadius: '6px', fontSize: '0.9rem', marginBottom: '24px' },
+  errorNotif: { backgroundColor: 'rgba(224, 122, 95, 0.2)', border: '1px solid #e07a5f', color: '#f2a490' },
+  footer: { textAlign: 'center', padding: '30px 20px', borderTop: '1px solid rgba(251,249,241,0.1)', color: '#8f9b95', fontSize: '0.85rem', marginTop: 'auto' }
 };
 
 export default Dashboard;
