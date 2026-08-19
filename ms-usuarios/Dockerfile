@@ -11,4 +11,4 @@ COPY . .
 
 EXPOSE 3001
 
-CMD ["node", "src/app.js"]
+CMD ["node", "--watch", "src/app.js"]

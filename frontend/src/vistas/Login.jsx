@@ -82,6 +82,7 @@ const Login = () => {
         localStorage.setItem('token_glancd', respuesta.data.token);
         localStorage.setItem('usuario_glancd', JSON.stringify(respuesta.data.usuario));
         localStorage.setItem('userId', respuesta.data.usuario.id);
+        localStorage.setItem('token', respuesta.data.token); //
 
         setMensajeExito(`Bienvenido/a, ${respuesta.data.usuario.nombre}.`);
 

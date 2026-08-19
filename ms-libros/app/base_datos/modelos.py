@@ -11,7 +11,9 @@ class GeneroModelo(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     nombre = Column(String(50), nullable=False)
+    clave_google = Column(String(100), nullable=False, unique=True)
     edad_minima = Column(Integer, nullable=True)
+    libros = relationship("LibroModelo", back_populates="genero")
 
 class AutorModelo(Base):
     __tablename__ = "autores"
@@ -38,6 +40,8 @@ class LibroModelo(Base):
     # 👈 AQUÍ ESTÁ LA MAGIA: Conexión con la tabla autores
     autor_id = Column(UUID(as_uuid=True), ForeignKey("autores.id"), nullable=False)
     autor = relationship("AutorModelo", back_populates="libros")
+    genero_id = Column(Integer, ForeignKey("generos.id"), nullable=True)
+    genero = relationship("GeneroModelo", back_populates="libros")
     
     # Campos adicionales del diagrama:
     google_id = Column(String(255), nullable=True)

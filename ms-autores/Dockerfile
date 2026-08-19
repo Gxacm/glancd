@@ -4,11 +4,11 @@ WORKDIR /app
 
 # Copiar requerimientos e instalarlos
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt "python-jose[cryptography]"
 
 # Copiar el resto del código
 COPY . .
 
 EXPOSE 8002
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]

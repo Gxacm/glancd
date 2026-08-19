@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navegacion from '../componentes/Navegacion';
 
@@ -6,20 +7,23 @@ const MiBiblioteca = () => {
   const [libros, setLibros] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
-  const urlBase = import.meta.env.VITE_API_LIBROS || 'http://localhost:8001';
+  const urlInteracciones = import.meta.env.VITE_API_INTERACCIONES || 'http://localhost:8003';
 
   useEffect(() => {
     const token = localStorage.getItem('token_glancd'); // <--- 1. Obtenemos el token
 
     if (!token) {
-      setError('Debes iniciar sesión para ver tu biblioteca.');
-      setCargando(false);
-      return;
+      const temporizador = window.setTimeout(() => {
+        setError('Debes iniciar sesión para ver tu biblioteca.');
+        setCargando(false);
+      }, 0);
+      return () => window.clearTimeout(temporizador);
     }
 
     // 2. Pasamos el token en los headers de la petición
-    axios.get(`${urlBase}/api/libros/`, {
+    axios.get(`${urlInteracciones}/api/interacciones/biblioteca`, {
       headers: {
         Authorization: `Bearer ${token}` 
       }
@@ -39,7 +43,7 @@ const MiBiblioteca = () => {
       .finally(() => {
         setCargando(false);
       });
-  }, [urlBase]);
+  }, [urlInteracciones]);
 
   return (
     <div style={estilos.contenedorPagina}>
@@ -65,7 +69,9 @@ const MiBiblioteca = () => {
         {!cargando && libros.length > 0 && (
           <div style={estilos.gridLibros}>
             {libros.map((libro) => (
-              <article key={libro.id} style={estilos.cardLibro}>
+              <article key={libro.id} style={{...estilos.cardLibro, cursor: 'pointer'}}
+                onClick={() => navigate(`/libro/${libro.id}`)}>
+                
                 <div style={estilos.coverContainer}>
                   {libro.url_portada ? (
                     <img src={libro.url_portada} alt={libro.titulo} style={estilos.coverImage}/>

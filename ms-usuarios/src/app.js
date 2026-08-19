@@ -23,6 +23,10 @@ app.get('/', (req, res) => {
   res.send('📡 Microservicio de Usuarios (ms-usuarios) en línea.');
 });
 
+app.get('/health', (_req, res) => {
+  res.json({ servicio: 'ms-usuarios', estado: 'operativo' });
+});
+
 // Iniciar servidor
 app.listen(PUERTO, () => {
   console.log(`🛡️ ms-usuarios corriendo independientemente en el puerto ${PUERTO}`);

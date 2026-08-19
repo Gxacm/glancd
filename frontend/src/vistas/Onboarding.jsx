@@ -15,6 +15,7 @@ export default function Onboarding() {
   const apiBase = import.meta.env.VITE_API_USUARIOS
     ? import.meta.env.VITE_API_USUARIOS.replace(/\/usuarios\/?$/, '')
     : 'http://localhost:3001/api';
+  const token = localStorage.getItem('token_glancd');
 
   useEffect(() => {
     axios.get(`${apiBase}/generos`)
@@ -54,6 +55,8 @@ export default function Onboarding() {
     try {
       await axios.post(`${apiBase}/generos/usuario/${userId}`, {
         generos_ids: selectedIds
+      }, {
+        headers: { Authorization: `Bearer ${token}` }
       });
       
       // REDIRECCIÓN DIRECTA A TU VISTA DE DASHBOARD

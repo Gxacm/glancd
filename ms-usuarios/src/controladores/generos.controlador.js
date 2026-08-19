@@ -18,6 +18,10 @@ const guardarPreferencias = async (req, res) => {
   const { id } = req.params;
   const { generos_ids } = req.body;
 
+  if (req.usuario.id !== id && !['admin', 'administrador'].includes(req.usuario.rol)) {
+    return res.status(403).json({ mensaje: 'No puedes modificar las preferencias de otro usuario.' });
+  }
+
   if (!Array.isArray(generos_ids) || generos_ids.length < 3) {
     return res.status(400).json({ mensaje: 'Debes seleccionar al menos 3 géneros.' });
   }

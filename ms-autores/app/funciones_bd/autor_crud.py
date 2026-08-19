@@ -10,6 +10,31 @@ def obtener_autor_por_nombre(db: Session, nombre_completo: str):
     # Buscamos si el autor ya existe para no duplicarlo
     return db.query(AutorModelo).filter(AutorModelo.nombre_completo == nombre_completo).first()
 
+def obtener_autores(db: Session):
+    return db.query(AutorModelo).order_by(AutorModelo.nombre_completo.asc()).all()
+
+def obtener_autor_por_id(db: Session, autor_id):
+    return db.query(AutorModelo).filter(AutorModelo.id == autor_id).first()
+
+def actualizar_autor(db: Session, autor_id, datos: AutorCrear):
+    autor = obtener_autor_por_id(db, autor_id)
+    if not autor:
+        return None
+    autor.nombre_completo = datos.nombre_completo
+    autor.biografia = datos.biografia
+    autor.url_foto = datos.url_foto
+    db.commit()
+    db.refresh(autor)
+    return autor
+
+def eliminar_autor(db: Session, autor_id):
+    autor = obtener_autor_por_id(db, autor_id)
+    if not autor:
+        return False
+    db.delete(autor)
+    db.commit()
+    return True
+
 def crear_autor(db: Session, autor: AutorCrear):
     # ==========================================
     # 2. CONSULTAR WIKIPEDIA ANTES DE CREAR

@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # -------------------------------------------------------------------
   # Frontend (React / Vue / Angular / Node)
@@ -15,6 +13,11 @@ services:
     volumes:
       - ./frontend:/app
       - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:3000 || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   # -------------------------------------------------------------------
   # Microservicio de Usuarios (Node.js)
@@ -26,6 +29,11 @@ services:
       - "3001:3001"
     env_file:
       - ./ms-usuarios/.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3001/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   # -------------------------------------------------------------------
   # Microservicio de Libros (FastAPI - Python)
@@ -37,6 +45,14 @@ services:
       - "8001:8001"
     env_file:
       - ./ms-libros/.env
+    depends_on:
+      ms-autores:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8001/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
 
   # -------------------------------------------------------------------
   # Microservicio de Autores (FastAPI - Python)
@@ -48,3 +64,56 @@ services:
       - "8002:8002"
     env_file:
       - ./ms-autores/.env
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8002/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+      # -------------------------------------------------------------------
+  # Microservicio de Interacciones (Node.js)
+  # -------------------------------------------------------------------
+  ms-interacciones:
+    build: ./ms-interacciones
+    container_name: ms-interacciones
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./ms-interacciones/.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8003/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # Microservicio de Reseñas (Node.js)
+  # -------------------------------------------------------------------
+  ms-resenas:
+    build: ./ms-resenas
+    container_name: ms-resenas
+    ports:
+      - "8004:8004"
+    env_file:
+      - ./ms-resenas/.env
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8004/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+
+  # -------------------------------------------------------------------
+  # Microservicio de Recomendaciones (FastAPI)
+  # -------------------------------------------------------------------
+  ms-recomendador:
+    build: ./ms-recomendador
+    container_name: ms-recomendador
+    ports:
+      - "8005:8005"
+    env_file:
+      - ./ms-recomendador/.env
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8005/health')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 5

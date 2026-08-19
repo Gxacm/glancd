@@ -6,6 +6,7 @@ from uuid import UUID
 # --- ESQUEMAS DE GÉNEROS ---
 class GeneroCreate(BaseModel):
     nombre: str
+    clave_google: str
     edad_minima: Optional[int] = 0
 
 class GeneroOut(GeneroCreate):
