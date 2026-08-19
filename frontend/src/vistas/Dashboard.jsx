@@ -15,7 +15,7 @@ const Dashboard = () => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
 
-  const urlBase = import.meta.env.VITE_API_LIBROS || 'http://localhost:8001';
+  const urlRecomendador = import.meta.env.VITE_API_RECOMENDADOR || 'http://localhost:8005';
 
   useEffect(() => {
     const token = localStorage.getItem('token_glancd');
@@ -26,11 +26,10 @@ const Dashboard = () => {
       return; 
     }
 
-    const parsedUser = JSON.parse(usuarioGuardado);
-    const userId = parsedUser.id || localStorage.getItem('userId');
-
     // Cargar recomendaciones por género de la API
-    axios.get(`${urlBase}/api/libros/recomendados/${userId}`)
+    axios.get(`${urlRecomendador}/api/recomendaciones/`, {
+      headers: { Authorization: `Bearer ${token}` }
+    })
       .then((respuesta) => {
         setSecciones(respuesta.data);
       })
@@ -39,7 +38,7 @@ const Dashboard = () => {
         setError('No pudimos cargar tus recomendaciones personalizadas. Inténtalo de nuevo.');
       })
       .finally(() => setCargando(false));
-  }, [navigate, urlBase]);
+  }, [navigate, urlRecomendador]);
 
   if (!usuario) {
     return (
@@ -127,22 +126,27 @@ const Dashboard = () => {
                 {sec.libros && sec.libros.map((libro, index) => (
                   <article 
                     className="glancd-card-hover" 
-                    key={libro.google_id || index}
-                    style={estilos.cardLibro}
-                  >
+                    key={`${libro.google_id}-${index}`}
+                    style={{...estilos.cardLibro, cursor: 'pointer'}}
+                    onClick={() => navigate(`/libro/${libro.id || libro.google_id}`)}>
                     <div style={estilos.coverContainer}>
-                      {libro.url_portada ? (
-                        <img 
-                          src={libro.url_portada.replace('http:', 'https:')} 
-                          alt={`Portada de ${libro.titulo}`} 
-                          style={estilos.coverImage}
-                        />
-                      ) : (
-                        <div style={estilos.coverFallback}>
-                          {libro.titulo?.slice(0, 1)}
-                        </div>
-                      )}
+                    {/* Fondo con la inicial siempre presente */}
+                    <div style={estilos.coverFallbackBg}>
+                      {libro.titulo?.slice(0, 1)}
                     </div>
+
+                    {/* Validamos que exista la portada y que NO sea el enlace roto del placeholder */}
+                    {libro.url_portada && !libro.url_portada.includes('placeholder.com') && (
+                      <img 
+                        src={libro.url_portada.replace('http:', 'https:')} 
+                        alt={`Portada de ${libro.titulo}`} 
+                        style={estilos.coverImageOver}
+                        onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    )}
+                  </div>
                     
                     <div style={estilos.cardInfo}>
                       <p style={estilos.libroAutor}>{libro.nombre_autor || 'Autor por descubrir'}</p>
@@ -175,7 +179,7 @@ const Dashboard = () => {
   );
 };
 
-// ESTILOS LIMPIOS (Se quitaron los estilos del header viejo)
+// ESTILOS LIMPIOS
 const estilos = {
   contenedorPagina: { backgroundColor: '#0f1e19', color: '#fbf9f1', minHeight: '100vh', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', display: 'flex', flexDirection: 'column' },
   mainContent: { padding: '40px 50px', maxWidth: '1400px', margin: '0 auto', flex: 1, width: '100%', boxSizing: 'border-box' },
@@ -189,9 +193,41 @@ const estilos = {
   catalogCount: { fontSize: '0.85rem', color: '#8f9b95', fontWeight: '500' },
   scrollContainer: { display: 'flex', gap: '24px', overflowX: 'auto', paddingBottom: '20px', scrollBehavior: 'smooth' },
   cardLibro: { backgroundColor: '#162c25', borderRadius: '8px', border: '1px solid rgba(251, 249, 241, 0.08)', minWidth: '220px', maxWidth: '220px', flexShrink: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' },
-  coverContainer: { height: '320px', backgroundColor: '#0f1e19', position: 'relative' },
-  coverImage: { width: '100%', height: '100%', objectFit: 'cover' },
-  coverFallback: { width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem', fontFamily: '"Georgia", serif', color: '#1f3d34', backgroundColor: '#0f1e19' },
+  
+  // --- INICIO DE ESTILOS DE PORTADA MODIFICADOS ---
+  coverContainer: { 
+    height: '260px', 
+    backgroundColor: '#0f1e19', 
+    position: 'relative', 
+    overflow: 'hidden' 
+  },
+  coverFallbackBg: { 
+    position: 'absolute', 
+    top: 0, 
+    left: 0, 
+    width: '100%', 
+    height: '100%', 
+    display: 'flex', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
+    fontSize: '4rem', 
+    fontFamily: '"Georgia", serif', 
+    color: '#1f3d34', 
+    backgroundColor: '#0f1e19',
+    zIndex: 1 
+  },
+  coverImageOver: { 
+    position: 'absolute', 
+    top: 0, 
+    left: 0, 
+    width: '100%', 
+    height: '100%', 
+    objectFit: 'cover', // Mantenemos 'cover' para que siga la línea de tu diseño actual. Si se cortan mucho, cámbialo a 'contain'
+    objectPosition: 'center',
+    zIndex: 2 
+  },
+  // --- FIN DE ESTILOS DE PORTADA MODIFICADOS ---
+
   cardInfo: { padding: '16px', display: 'flex', flexDirection: 'column', flex: 1 },
   libroTitulo: { fontSize: '1rem', color: '#fbf9f1', margin: '0 0 8px 0', lineHeight: '1.3', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
   libroAutor: { fontSize: '0.8rem', color: '#e07a5f', margin: '0 0 6px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: '500' },

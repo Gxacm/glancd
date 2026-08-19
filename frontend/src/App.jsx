@@ -6,6 +6,8 @@ import Dashboard from './vistas/Dashboard';
 import DashboardAdmin from './vistas/DashboardAdmin';
 import Explorar from './vistas/Explorar';
 import MiBiblioteca from './vistas/MiBiblioteca';
+import DetalleLibro from './vistas/DetalleLibro';
+import ListaResenas from './vistas/ListaResenas';
 
 function App() {
   return (
@@ -20,6 +22,10 @@ function App() {
         <Route path="/explorar" element={<Explorar />} />
         
         <Route path="/biblioteca" element={<MiBiblioteca />} />
+        
+        <Route path="/libro/:id" element={<DetalleLibro />} />
+        <Route path="/resenas" element={<ListaResenas />} />
+        
         
         {/* Panel exclusivo del Administrador */}
         <Route path="/dashboard-admin" element={<DashboardAdmin />} /> 

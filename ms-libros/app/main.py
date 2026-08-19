@@ -22,3 +22,7 @@ app.include_router(catalogos_rutas.router, prefix="/api", tags=["Catalogos"])
 @app.get("/")
 def home():
     return {"servicio": "ms-libros", "estado": "operativo", "puerto": 8001}
+
+@app.get("/health")
+def health():
+    return {"servicio": "ms-libros", "estado": "operativo"}

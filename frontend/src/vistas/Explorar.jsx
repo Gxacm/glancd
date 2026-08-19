@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navegacion from '../componentes/Navegacion';
 
@@ -12,6 +13,7 @@ const Explorar = () => {
   const [generos, setGeneros] = useState([]);
   const [cargandoGeneros, setCargandoGeneros] = useState(true);
   const [errorGeneros, setErrorGeneros] = useState('');
+  const navigate = useNavigate();
 
   // Estados para Búsqueda
   const [busqueda, setBusqueda] = useState('');
@@ -19,6 +21,10 @@ const Explorar = () => {
   const [buscando, setBuscando] = useState(false);
   const [errorBusqueda, setErrorBusqueda] = useState('');
   const [busquedaActiva, setBusquedaActiva] = useState(false);
+  const [generoSeleccionado, setGeneroSeleccionado] = useState(null);
+  const [librosGenero, setLibrosGenero] = useState([]);
+  const [cargandoGenero, setCargandoGenero] = useState(false);
+  const [errorGenero, setErrorGenero] = useState('');
 
   const urlBase = import.meta.env.VITE_API_LIBROS || 'http://localhost:8001';
 
@@ -70,6 +76,24 @@ const Explorar = () => {
     }
   };
 
+  const seleccionarGenero = async (genero) => {
+    setGeneroSeleccionado(genero);
+    setCargandoGenero(true);
+    setErrorGenero('');
+    setLibrosGenero([]);
+    try {
+      const respuesta = await axios.get(`${urlBase}/api/generos/${genero.id}/recomendaciones`);
+      setLibrosGenero(respuesta.data.libros || []);
+    } catch (error) {
+      console.error('Error cargando recomendaciones por género:', error);
+      setErrorGenero('No pudimos obtener recomendaciones para este género.');
+    } finally {
+      setCargandoGenero(false);
+    }
+  };
+
+  const mostrarLibro = (libro) => navigate(`/libro/${libro.id || libro.google_id}`);
+
   return (
     <div style={estilos.contenedorPagina}>
       <Navegacion />
@@ -107,7 +131,8 @@ const Explorar = () => {
             {!buscando && resultados.length > 0 && (
               <div style={estilos.gridLibros}>
                 {resultados.map((libro, index) => (
-                  <article key={libro.id || index} style={estilos.cardLibro}>
+                  <article key={libro.id || index} style={{...estilos.cardLibro, cursor: 'pointer'}}
+                  onClick={() => mostrarLibro(libro)}>
                     <div style={estilos.coverContainer}>
                       {libro.url_portada ? (
                         <img src={libro.url_portada} alt={libro.titulo} style={estilos.coverImage}/>
@@ -119,6 +144,27 @@ const Explorar = () => {
                       <h3 style={estilos.libroTitulo}>{libro.titulo}</h3>
                       <p style={estilos.libroAutor}>{libro.nombre_autor}</p>
                     </div>
+                  </article>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : generoSeleccionado ? (
+          <div>
+            <button type="button" onClick={() => setGeneroSeleccionado(null)} style={estilos.botonVolver}>← Ver todos los géneros</button>
+            <h1 style={estilos.titulo}>Recomendados de {generoSeleccionado.nombre}</h1>
+            <p style={estilos.subtitulo}>Una selección de lecturas relacionadas con este género.</p>
+            {cargandoGenero && <div style={estilos.mensaje}>Buscando libros relacionados…</div>}
+            {errorGenero && <div style={{ ...estilos.mensaje, color: '#e07a5f' }}>{errorGenero}</div>}
+            {!cargandoGenero && !errorGenero && librosGenero.length === 0 && <div style={estilos.mensaje}>Aún no encontramos libros para este género.</div>}
+            {!cargandoGenero && librosGenero.length > 0 && (
+              <div style={estilos.gridLibros}>
+                {librosGenero.map((libro, index) => (
+                  <article key={libro.id || libro.google_id || index} style={{ ...estilos.cardLibro, cursor: 'pointer' }} onClick={() => mostrarLibro(libro)}>
+                    <div style={estilos.coverContainer}>
+                      {libro.url_portada ? <img src={libro.url_portada} alt={libro.titulo} style={estilos.coverImage} /> : <div style={estilos.coverFallback}>{libro.titulo?.slice(0, 1)}</div>}
+                    </div>
+                    <div style={estilos.cardInfo}><h3 style={estilos.libroTitulo}>{libro.titulo}</h3><p style={estilos.libroAutor}>{libro.nombre_autor || 'Autor desconocido'}</p></div>
                   </article>
                 ))}
               </div>
@@ -137,12 +183,12 @@ const Explorar = () => {
                 {generos.map((genero, index) => {
                   const colorFondo = coloresSpotify[index % coloresSpotify.length];
                   return (
-                    <div key={genero.id} style={{ ...estilos.tarjetaGenero, backgroundColor: colorFondo }}>
+                    <button key={genero.id} type="button" onClick={() => seleccionarGenero(genero)} style={{ ...estilos.tarjetaGenero, backgroundColor: colorFondo }}>
                       <h3 style={estilos.nombreGenero}>{genero.nombre}</h3>
                       <div style={estilos.contenedorPortadaMock}>
                         <div style={estilos.portadaMock}>Portada</div> 
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -167,11 +213,13 @@ const estilos = {
   botonBuscar: { padding: '16px 32px', borderRadius: '30px', border: 'none', backgroundColor: '#e07a5f', color: '#fff', fontSize: '1rem', fontWeight: 'bold', cursor: 'pointer', transition: 'background-color 0.2s' },
   
   titulo: { fontSize: '28px', fontWeight: '700', marginBottom: '32px', letterSpacing: '-0.5px' },
+  subtitulo: { color: '#8f9b95', marginTop: '-20px', marginBottom: '28px' },
+  botonVolver: { background: 'transparent', color: '#e07a5f', border: 0, padding: '0 0 16px', cursor: 'pointer', fontSize: '0.95rem' },
   mensaje: { padding: '40px', textAlign: 'center', color: '#8f9b95', fontSize: '1.2rem' },
   
   // Grid Géneros
   gridGeneros: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '24px' },
-  tarjetaGenero: { position: 'relative', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1 / 1', cursor: 'pointer', padding: '16px', border: 'none', transition: 'transform 0.2s ease' },
+  tarjetaGenero: { position: 'relative', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1 / 1', cursor: 'pointer', padding: '16px', border: 'none', transition: 'transform 0.2s ease', textAlign: 'left' },
   nombreGenero: { margin: 0, fontSize: '22px', fontWeight: '700', wordBreak: 'break-word', maxWidth: '100%', zIndex: 2, position: 'relative', color: '#ffffff' },
   contenedorPortadaMock: { position: 'absolute', bottom: '-15px', right: '-20px', width: '110px', height: '150px', transform: 'rotate(25deg)', boxShadow: '0 8px 16px rgba(0,0,0,0.4)', zIndex: 1 },
   portadaMock: { width: '100%', height: '100%', backgroundColor: '#162c25', color: '#8f9b95', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold', border: '1px solid rgba(251, 249, 241, 0.1)' },

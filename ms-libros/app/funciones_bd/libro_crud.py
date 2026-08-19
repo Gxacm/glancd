@@ -10,7 +10,7 @@ def obtener_todos_los_libros(db: Session):
     return db.query(LibroModelo).all()
 
 
-def crear_libro(db: Session, libro: libro_esquema.LibroCreate, autor_id_generado: str):
+def crear_libro(db: Session, libro: libro_esquema.LibroCreate, autor_id: UUID):
     nuevo_libro = LibroModelo(
         titulo=libro.titulo,
         sinopsis=libro.sinopsis,
@@ -22,7 +22,8 @@ def crear_libro(db: Session, libro: libro_esquema.LibroCreate, autor_id_generado
         clasificacion_madurez=libro.clasificacion_madurez,
         proveedor_origen=libro.proveedor_origen,
         google_id=libro.google_id,
-        autor_id=autor_id_generado
+        autor_id=autor_id,
+        genero_id=libro.genero_id,
     )
     db.add(nuevo_libro)
     db.commit()
@@ -30,7 +31,7 @@ def crear_libro(db: Session, libro: libro_esquema.LibroCreate, autor_id_generado
     return nuevo_libro
 
 
-def actualizar_libro(db: Session, libro_id: UUID, libro_data: libro_esquema.LibroCreate, autor_id_generado: str):
+def actualizar_libro(db: Session, libro_id: UUID, libro_data: libro_esquema.LibroCreate, autor_id: UUID):
     libro = db.query(LibroModelo).filter(LibroModelo.id == libro_id).first()
     if not libro:
         return None
@@ -45,7 +46,8 @@ def actualizar_libro(db: Session, libro_id: UUID, libro_data: libro_esquema.Libr
     libro.clasificacion_madurez = libro_data.clasificacion_madurez
     libro.proveedor_origen = libro_data.proveedor_origen
     libro.google_id = libro_data.google_id
-    libro.autor_id = autor_id_generado 
+    libro.autor_id = autor_id
+    libro.genero_id = libro_data.genero_id
 
     db.commit()
     db.refresh(libro)
@@ -60,3 +62,11 @@ def eliminar_libro(db: Session, libro_id: UUID):
     db.delete(libro)
     db.commit()
     return True
+
+def obtener_libro_por_id(db: Session, libro_id: UUID):
+    return db.query(LibroModelo).filter(LibroModelo.id == libro_id).first()
+
+
+def obtener_libro_por_google_id(db: Session, google_id: str):
+    """Obtiene el libro local asociado a un identificador de Google Books."""
+    return db.query(LibroModelo).filter(LibroModelo.google_id == google_id).first()

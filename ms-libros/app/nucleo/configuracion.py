@@ -9,5 +9,6 @@ load_dotenv(os.path.join(BASE_DIR, ".env"))
 class Settings:
     DATABASE_URL: str = os.getenv("DATABASE_URL")
     PORT: int = int(os.getenv("PORT", 8001))
+    MS_AUTORES_URL: str = os.getenv("MS_AUTORES_URL", "http://ms-autores:8002")
 
 settings = Settings()

@@ -119,3 +119,35 @@ async def obtener_recomendaciones_multiples_generos(generos: list):
         resultados = await asyncio.gather(*tareas)
         
     return resultados
+
+def obtener_detalle_google_book(google_id: str):
+    """Obtiene los detalles de un libro específico directamente desde Google Books usando su ID."""
+    url = f"https://www.googleapis.com/books/v1/volumes/{google_id}"
+    if API_KEY:
+        url += f"?key={API_KEY}"
+        
+    try:
+        respuesta = requests.get(url, timeout=5)
+        respuesta.raise_for_status()
+        datos = respuesta.json()
+        
+        info = datos.get("volumeInfo", {})
+        
+        # Reutilizamos tu excelente hack para la portada
+        url_portada = info.get("imageLinks", {}).get("thumbnail", "").replace("http:", "https:")
+        if url_portada:
+            url_portada = url_portada.replace("zoom=1", "zoom=3").replace("&edge=curl", "")
+            
+        return {
+            "id": google_id, # Lo mandamos como 'id' para que React lo asimile igual que los locales
+            "titulo": info.get("title", "Sin título"),
+            "autor": info.get("authors", ["Autor desconocido"])[0] if info.get("authors") else "Autor desconocido",
+            "sinopsis": info.get("description", "Sin sinopsis disponible en este momento."),
+            "paginas": info.get("pageCount", 0),
+            "url_portada": url_portada,
+            "genero": info.get("categories", ["Sin género"])[0] if info.get("categories") else "Sin género",
+            "origen": "Google Books"
+        }
+    except Exception as e:
+        print(f"Error al obtener libro individual de Google Books: {e}")
+        return None

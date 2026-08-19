@@ -2,6 +2,13 @@ const pool = require('../configuracion/baseDatos');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+const obtenerSecretoJwt = () => {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET no está configurado.');
+  }
+  return process.env.JWT_SECRET;
+};
+
 // 1. Registro
 const registrar = async (req, res) => {
   const { nombre, apellido, email, contrasena, fecha_nacimiento } = req.body;
@@ -26,7 +33,7 @@ const registrar = async (req, res) => {
 
     const token = jwt.sign(
       { id: usuario.id, rol: usuario.rol },
-      process.env.JWT_SECRET || 'secreto_super_seguro',
+      obtenerSecretoJwt(),
       { expiresIn: '24h' }
     );
 
@@ -61,7 +68,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       { id: usuario.id, rol: usuario.rol },
-      process.env.JWT_SECRET || 'secreto_super_seguro',
+      obtenerSecretoJwt(),
       { expiresIn: '24h' }
     );
 
