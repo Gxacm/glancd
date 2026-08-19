@@ -1,4 +1,4 @@
-import pool from '../Configuracion/baseDatos.js';
+import { consultarConReintento } from '../Configuracion/baseDatos.js';
 
 const validarEntrada = ({ calificacion, contenido }) => {
   const puntaje = Number(calificacion);
@@ -14,14 +14,18 @@ const validarEntrada = ({ calificacion, contenido }) => {
 export async function listarResenasLibro(req, res) {
   try {
     const { libroId } = req.params;
-    const resultado = await pool.query(`
+    const resultado = await consultarConReintento(`
       SELECT r.id, r.calificacion, r.contenido, r.creado_en, r.actualizado_en,
-             u.id AS usuario_id, u.nombre, u.apellido
+             u.id AS usuario_id, u.nombre, u.apellido,
+             COUNT(mgr.usuario_id)::int AS total_me_gusta,
+             COALESCE(BOOL_OR(mgr.usuario_id = $2), false) AS me_gusta_usuario
       FROM resenas r
       JOIN usuarios u ON u.id = r.usuario_id
+      LEFT JOIN me_gusta_resenas mgr ON mgr.resena_id = r.id
       WHERE r.libro_id = $1
+      GROUP BY r.id, u.id
       ORDER BY r.actualizado_en DESC
-    `, [libroId]);
+    `, [libroId, req.usuario?.id || null]);
     return res.json(resultado.rows);
   } catch (error) {
     console.error('Error al listar reseñas:', error);
@@ -33,7 +37,7 @@ export async function crearResena(req, res) {
   const errorValidacion = validarEntrada(req.body);
   if (errorValidacion) return res.status(400).json({ mensaje: errorValidacion });
   try {
-    const resultado = await pool.query(`
+    const resultado = await consultarConReintento(`
       INSERT INTO resenas (usuario_id, libro_id, calificacion, contenido)
       VALUES ($1, $2, $3, $4)
       RETURNING id, calificacion, contenido, creado_en, actualizado_en
@@ -49,7 +53,7 @@ export async function crearResena(req, res) {
 
 export async function listarMisResenas(req, res) {
   try {
-    const resultado = await pool.query(`
+    const resultado = await consultarConReintento(`
       SELECT r.id, r.libro_id, r.calificacion, r.contenido, r.creado_en, r.actualizado_en,
              l.titulo, l.url_portada, a.nombre_completo AS nombre_autor
       FROM resenas r
@@ -69,7 +73,7 @@ export async function actualizarMiResena(req, res) {
   const errorValidacion = validarEntrada(req.body);
   if (errorValidacion) return res.status(400).json({ mensaje: errorValidacion });
   try {
-    const resultado = await pool.query(`
+    const resultado = await consultarConReintento(`
       UPDATE resenas
       SET calificacion = $1, contenido = $2, actualizado_en = NOW()
       WHERE usuario_id = $3 AND libro_id = $4
@@ -85,7 +89,7 @@ export async function actualizarMiResena(req, res) {
 
 export async function eliminarMiResena(req, res) {
   try {
-    const resultado = await pool.query(
+    const resultado = await consultarConReintento(
       'DELETE FROM resenas WHERE usuario_id = $1 AND libro_id = $2',
       [req.usuario.id, req.params.libroId],
     );
@@ -94,5 +98,26 @@ export async function eliminarMiResena(req, res) {
   } catch (error) {
     console.error('Error al eliminar reseña:', error);
     return res.status(500).json({ mensaje: 'No se pudo eliminar la reseña.' });
+  }
+}
+
+export async function alternarMeGustaResena(req, res) {
+  try {
+    const { resenaId } = req.params;
+    const existente = await consultarConReintento(
+      'SELECT 1 FROM me_gusta_resenas WHERE usuario_id = $1 AND resena_id = $2',
+      [req.usuario.id, resenaId],
+    );
+    if (existente.rowCount) {
+      await consultarConReintento('DELETE FROM me_gusta_resenas WHERE usuario_id = $1 AND resena_id = $2', [req.usuario.id, resenaId]);
+    } else {
+      await consultarConReintento('INSERT INTO me_gusta_resenas (usuario_id, resena_id) VALUES ($1, $2)', [req.usuario.id, resenaId]);
+    }
+    const total = await consultarConReintento('SELECT COUNT(*)::int AS total FROM me_gusta_resenas WHERE resena_id = $1', [resenaId]);
+    return res.json({ estado: !existente.rowCount, total_me_gusta: total.rows[0].total });
+  } catch (error) {
+    if (error.code === '23503') return res.status(404).json({ mensaje: 'La reseña no existe.' });
+    console.error('Error al reaccionar a reseña:', error);
+    return res.status(500).json({ mensaje: 'No se pudo registrar el me gusta.' });
   }
 }

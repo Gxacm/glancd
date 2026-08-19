@@ -10,7 +10,7 @@ from app.base_datos.conexion import get_db
 from app.esquemas.libro_esquema import LibroResponse, LibroCreate
 from app.seguridad import obtener_usuario_actual, requerir_admin
 from app.funciones_bd import libro_crud
-from app.servicios.google_books import buscar_libros, obtener_recomendaciones_multiples_generos, obtener_detalle_google_book
+from app.servicios.google_books import buscar_libros, obtener_recomendaciones_multiples_generos, obtener_detalle_google_book, obtener_libros_en_tendencia
 from app.nucleo.configuracion import settings
 router = APIRouter(prefix="/api/libros", tags=["Libros"])
 
@@ -95,6 +95,11 @@ def buscar_libros_al_vuelo(
         return {"mensaje": "No se encontraron libros para tu búsqueda.", "resultados": []}
         
     return {"resultados": resultados}
+
+
+@router.get("/tendencias")
+def obtener_tendencias(limite: int = Query(10, ge=1, le=40)):
+    return {"libros": obtener_libros_en_tendencia(limite)}
 
 # 4 Obtener un libro específico por su ID (Híbrido: BD Local o Google Books)
 @router.get("/{libro_id}")

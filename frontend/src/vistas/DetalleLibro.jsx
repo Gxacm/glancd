@@ -14,12 +14,15 @@ const DetalleLibro = () => {
   const [error, setError] = useState('');
   const [meGusta, setMeGusta] = useState(false);
   const [animandoCorazon, setAnimandoCorazon] = useState(false);
+  const [guardandoLike, setGuardandoLike] = useState(false);
 
   const urlBaseLibros = import.meta.env.VITE_API_LIBROS || 'http://localhost:8001';
   const urlInteracciones = import.meta.env.VITE_API_INTERACCIONES || 'http://localhost:8003';
   
   // ¡AQUÍ ESTÁ EL CAMBIO! Obtenemos el usuarioId aquí arriba
   const token = localStorage.getItem('token_glancd');
+  const esUuid = (valor) => typeof valor === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(valor);
+  const nombreAutor = (item) => item?.autor?.nombre_completo || item?.nombre_autor || item?.autor || 'Autor desconocido';
 
   // 3. Efecto para buscar el libro apenas cargue la página
   useEffect(() => {
@@ -48,7 +51,7 @@ const DetalleLibro = () => {
     const comprobarLike = async () => {
       // Un UUID tiene 36 caracteres. Si es menor, es de Google Books y 
       // sabemos de antemano que no puede estar en la tabla de me_gustas aún.
-      if (!libro || !libro.id || libro.id.length < 30 || !token) return;
+      if (!libro || !esUuid(libro.id) || !token) return;
 
       try {
         const respuesta = await axios.get(`${urlInteracciones}/api/interacciones/likes/libros/estado`, {
@@ -104,9 +107,8 @@ const DetalleLibro = () => {
       return;
     }
 
-    // A. Animación optimista (Cambiamos la UI al instante para que se sienta rápido)
-    const estadoPrevio = meGusta;
-    setMeGusta(!meGusta);
+    if (guardandoLike) return;
+    setGuardandoLike(true);
     setAnimandoCorazon(true);
     setTimeout(() => setAnimandoCorazon(false), 300);
 
@@ -114,34 +116,33 @@ const DetalleLibro = () => {
       const libroIdFinal = await asegurarLibroLocal();
 
       // C. Mandamos el UUID oficial a ms-interacciones (también le pasamos el token por si acaso)
-      await axios.post(`${urlInteracciones}/api/interacciones/likes/libros`, {
+      const respuesta = await axios.post(`${urlInteracciones}/api/interacciones/likes/libros`, {
         libro_id: libroIdFinal
       }, {
         headers: {
           'Authorization': `Bearer ${token}` // Lo enviamos aquí también
         }
       });
+      setMeGusta(respuesta.data.estado);
 
     } catch (error) {
       console.error("Error en el proceso de Me gusta:", error);
-      // Si el servidor falla, revertimos la animación
-      setMeGusta(estadoPrevio);
-      alert("Oops, hubo un problema al guardar el libro en tu biblioteca.");
-    }
+      alert(error.response?.data?.mensaje || "No pudimos actualizar tu biblioteca. Inténtalo nuevamente.");
+    } finally { setGuardandoLike(false); }
   };
 
   // Las tablas de likes y reseñas referencian el UUID interno. Los resultados
   // de Google Books usan otro identificador, por lo que se persisten una vez
   // antes de realizar una acción que requiera el UUID.
   const asegurarLibroLocal = async () => {
-    if (libro.id.length >= 30) return libro.id;
+    if (esUuid(libro.id)) return libro.id;
 
     const datosLibro = {
       titulo: libro.titulo,
       sinopsis: libro.sinopsis || 'Sin sinopsis',
       url_portada: libro.url_portada,
       google_id: libro.id,
-      nombre_autor: libro.autor?.nombre_completo || libro.autor || 'Autor Desconocido',
+      nombre_autor: nombreAutor(libro),
     };
     const respuesta = await axios.post(`${urlBaseLibros}/api/libros/`, datosLibro, {
       headers: { Authorization: `Bearer ${token}` },
@@ -201,11 +202,12 @@ const DetalleLibro = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '15px' }}>
                     <div>
                     <h1 style={estilos.titulo}>{libro.titulo}</h1>
-                    <h3 style={estilos.autor}>Por: {libro.autor?.nombre_completo || libro.autor || 'Autor desconocido'}</h3>
+                    <h3 style={estilos.autor}>Por: {nombreAutor(libro)}</h3>
                     </div>
 
                     <button 
                     onClick={manejarMeGusta}
+                    disabled={guardandoLike}
                     style={{
                         ...estilos.btnCorazon,
                         background: 'transparent',
@@ -216,7 +218,7 @@ const DetalleLibro = () => {
                         color: meGusta ? '#e07a5f' : '#8f9b95',
                         transition: 'transform 0.2s ease-in-out' // Transición suave para el scale
                     }}
-                    title={meGusta ? "Quitar de Mi Biblioteca" : "Guardar en Mi Biblioteca"}
+                    title={guardandoLike ? 'Actualizando biblioteca…' : meGusta ? "Quitar de Mi Biblioteca" : "Guardar en Mi Biblioteca"}
                     >
                     <svg 
                         xmlns="http://www.w3.org/2000/svg" 
@@ -235,7 +237,7 @@ const DetalleLibro = () => {
                     </button>
                 </div>
                 <div style={{ ...estilos.tagsContainer, marginTop: '12px' }}>
-                    <span style={estilos.tag}>{libro.genero || 'Sin género'}</span>
+                    <span style={estilos.tag}>{libro.genero?.nombre || libro.genero || 'Sin género'}</span>
                     <span style={estilos.tag}>{libro.paginas ? `${libro.paginas} páginas` : 'Páginas N/A'}</span>
                 </div>
                 </div>

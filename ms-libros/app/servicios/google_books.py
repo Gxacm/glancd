@@ -84,6 +84,31 @@ def buscar_libros(query: str):
     return []
 
 
+def obtener_libros_en_tendencia(limite: int = 10):
+    """Catálogo público de bienvenida, servido desde backend para evitar CORS."""
+    url = f"https://www.googleapis.com/books/v1/volumes?q=subject:fiction&orderBy=relevance&maxResults={min(max(limite, 1), 40)}"
+    if API_KEY:
+        url += f"&key={API_KEY}"
+    try:
+        respuesta = requests.get(url, timeout=8)
+        respuesta.raise_for_status()
+        items = respuesta.json().get("items", [])
+        return [
+            {
+                "id": item.get("id"),
+                "titulo": item.get("volumeInfo", {}).get("title", "Sin título"),
+                "autor": ", ".join(item.get("volumeInfo", {}).get("authors", ["Autor desconocido"])),
+                "portada": item.get("volumeInfo", {}).get("imageLinks", {}).get("thumbnail", "").replace("http:", "https:") or "https://via.placeholder.com/150x220?text=Sin+Portada",
+                "categoria": (item.get("volumeInfo", {}).get("categories") or ["Lecturas destacadas"])[0],
+            }
+            for item in items
+            if item.get("id")
+        ]
+    except requests.RequestException as error:
+        print(f"Error obteniendo tendencias de Google Books: {error}")
+        return []
+
+
 # ==========================================
 # NUEVAS FUNCIONES PARA RECOMENDACIONES POR GÉNERO
 # ==========================================

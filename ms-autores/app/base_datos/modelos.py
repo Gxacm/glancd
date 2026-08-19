@@ -11,5 +11,5 @@ class AutorModelo(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nombre_completo = Column(String(100), nullable=False)
     biografia = Column(Text, nullable=True, default="")
-    url_foto = Column(String(255), nullable=True, default="")
+    url_foto = Column(Text, nullable=True, default="")
     creado_en = Column(DateTime, default=datetime.now)

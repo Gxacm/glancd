@@ -28,20 +28,9 @@ const Login = () => {
   useEffect(() => {
     const cargarTendencias = async () => {
       try {
-        const res = await axios.get(
-          'https://www.googleapis.com/books/v1/volumes?q=subject:fiction&orderBy=relevance&maxResults=10'
-        );
-        
-        if (res.data && res.data.items) {
-          const librosFormateados = res.data.items.map((item) => ({
-            id: item.id,
-            titulo: item.volumeInfo.title || 'Sin título',
-            autor: item.volumeInfo.authors ? item.volumeInfo.authors.join(', ') : 'Autor desconocido',
-            portada: item.volumeInfo.imageLinks?.thumbnail?.replace('http:', 'https:') || 
-                     'https://via.placeholder.com/150x220?text=Sin+Portada'
-          }));
-          setLibrosPopulares(librosFormateados);
-        }
+        const api = import.meta.env.VITE_API_LIBROS || 'http://localhost:8001';
+        const res = await axios.get(`${api}/api/libros/tendencias?limite=12`);
+        setLibrosPopulares(res.data.libros || []);
       } catch (err) {
         console.error("Error cargando catálogo de vista previa:", err);
       } finally {
@@ -238,7 +227,7 @@ const Login = () => {
               Cargando catálogo en tendencia...
             </div>
           ) : (
-            <div style={estilos.gridLibros}>
+            librosPopulares.length > 0 ? <div style={estilos.gridLibros}>
               {librosPopulares.map((libro) => (
                 <div 
                   key={libro.id} 
@@ -259,7 +248,7 @@ const Login = () => {
                   </div>
                 </div>
               ))}
-            </div>
+            </div> : <div style={{ textAlign: 'center', padding: '50px', color: '#8f9b95' }}>Las tendencias estarán disponibles en unos instantes. Puedes registrarte y explorar todo el catálogo.</div>
           )}
         </section>
       </main>

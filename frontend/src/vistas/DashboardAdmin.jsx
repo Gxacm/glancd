@@ -5,6 +5,7 @@ import axios from 'axios';
 const libroVacio = { titulo: '', sinopsis: '', url_portada: '', edad_objetivo: 0, autor_id: '', genero_id: '' };
 const autorVacio = { nombre_completo: '', biografia: '', url_foto: '' };
 const generoVacio = { nombre: '', clave_google: '', edad_minima: 0 };
+const mejorasVisuales = `.shell aside{background:linear-gradient(180deg,#17382e 0%,#10251f 100%);border-right:1px solid rgba(251,249,241,.08)}.shell main{background:radial-gradient(circle at 92% 2%,rgba(224,122,95,.12),transparent 28%)}.shell header{padding:28px 30px;border-radius:16px;background:linear-gradient(110deg,#18342b,#1d493a);border:1px solid rgba(251,249,241,.1)}.shell .panel{box-shadow:0 18px 55px rgba(0,0,0,.22)}.shell nav button{border-left:2px solid transparent}.shell nav button.active{border-left-color:#e07a5f}.shell .modal{box-shadow:0 30px 80px rgba(0,0,0,.55)}.shell .fila:not(.head):hover{background:rgba(251,249,241,.035)}`;
 
 export default function DashboardAdmin() {
   const navigate = useNavigate();
@@ -34,6 +35,13 @@ export default function DashboardAdmin() {
     const timer = window.setTimeout(() => { cargar(); }, 0);
     return () => window.clearTimeout(timer);
   }, [cargar, navigate, usuario]);
+
+  useEffect(() => {
+    const estilo = document.createElement('style');
+    estilo.textContent = mejorasVisuales;
+    document.head.appendChild(estilo);
+    return () => estilo.remove();
+  }, []);
 
   const finalizar = (texto) => { setMensaje(texto); setError(''); setModal(null); setEditando(null); cargar(); };
   const abrirLibro = (l = null) => { setEditando(l?.id || null); setLibroForm(l ? { titulo: l.titulo || '', sinopsis: l.sinopsis || '', url_portada: l.url_portada || '', edad_objetivo: l.edad_objetivo || 0, autor_id: l.autor_id || '', genero_id: l.genero_id || '' } : libroVacio); setModal('libro'); };

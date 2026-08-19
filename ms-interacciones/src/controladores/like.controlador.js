@@ -1,4 +1,4 @@
-import pool from '../configuracion/baseDatos.js';
+import { consultarConReintento } from '../configuracion/baseDatos.js';
 
 // 1. Verificar si un libro ya tiene "Me gusta" de un usuario
 export const verificarLikeLibro = async (req, res) => {
@@ -14,7 +14,7 @@ export const verificarLikeLibro = async (req, res) => {
             SELECT 1 FROM me_gusta_libros 
             WHERE usuario_id = $1 AND libro_id = $2
         `;
-        const resultado = await pool.query(query, [usuario_id, libro_id]);
+        const resultado = await consultarConReintento(query, [usuario_id, libro_id]);
 
         res.json({ estado: resultado.rowCount > 0 });
     } catch (error) {
@@ -35,17 +35,17 @@ export const toggleLikeLibro = async (req, res) => {
 
         // Primero revisamos si ya existe
         const queryCheck = `SELECT 1 FROM me_gusta_libros WHERE usuario_id = $1 AND libro_id = $2`;
-        const checkResult = await pool.query(queryCheck, [usuario_id, libro_id]);
+        const checkResult = await consultarConReintento(queryCheck, [usuario_id, libro_id]);
 
         if (checkResult.rowCount > 0) {
             // Si existe, lo eliminamos (Quitar Me Gusta)
             const queryDelete = `DELETE FROM me_gusta_libros WHERE usuario_id = $1 AND libro_id = $2`;
-            await pool.query(queryDelete, [usuario_id, libro_id]);
+            await consultarConReintento(queryDelete, [usuario_id, libro_id]);
             return res.json({ mensaje: "Libro eliminado de tu biblioteca", estado: false });
         } else {
             // Si no existe, lo insertamos (Dar Me Gusta)
             const queryInsert = `INSERT INTO me_gusta_libros (usuario_id, libro_id) VALUES ($1, $2)`;
-            await pool.query(queryInsert, [usuario_id, libro_id]);
+            await consultarConReintento(queryInsert, [usuario_id, libro_id]);
             return res.status(201).json({ mensaje: "Libro agregado a tu biblioteca", estado: true });
         }
     } catch (error) {
@@ -71,7 +71,7 @@ export const obtenerBiblioteca = async (req, res) => {
             WHERE m.usuario_id = $1
             ORDER BY m.creado_en DESC
         `;
-        const resultado = await pool.query(query, [usuario_id]);
+        const resultado = await consultarConReintento(query, [usuario_id]);
         return res.json(resultado.rows);
     } catch (error) {
         console.error('Error al obtener la biblioteca:', error);

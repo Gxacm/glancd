@@ -21,7 +21,7 @@ class AutorModelo(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     nombre_completo = Column(String(200), nullable=False)
     biografia = Column(Text, nullable=True)
-    url_foto = Column(String(255), nullable=True)
+    url_foto = Column(Text, nullable=True)
     creado_en = Column(DateTime, default=datetime.now)
     
     # Esta relación ahora funcionará perfectamente:
@@ -33,7 +33,7 @@ class LibroModelo(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     titulo = Column(String(255), nullable=False)
     sinopsis = Column(Text, nullable=True)
-    url_portada = Column(String(255), nullable=True)
+    url_portada = Column(Text, nullable=True)
     edad_objetivo = Column(Integer, nullable=True)
     creado_en = Column(DateTime, default=datetime.now)
     

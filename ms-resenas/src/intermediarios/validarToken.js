@@ -11,3 +11,14 @@ export default function validarToken(req, res, next) {
     return res.status(401).json({ mensaje: 'Token inválido o expirado.' });
   }
 }
+
+export function tokenOpcional(req, _res, next) {
+  const header = req.header('Authorization');
+  if (!header?.startsWith('Bearer ') || !process.env.JWT_SECRET) return next();
+  try {
+    req.usuario = jwt.verify(header.slice(7), process.env.JWT_SECRET);
+  } catch {
+    // Listar reseñas es público; un token inválido no impide la lectura.
+  }
+  return next();
+}
