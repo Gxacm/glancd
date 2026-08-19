@@ -3,10 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Navegacion from '../componentes/Navegacion';
 
-const coloresSpotify = [
-  '#E13300', '#1E3264', '#E8115B', '#148A08', '#BC5900', 
-  '#8D67AB', '#7358FF', '#E1118C', '#509BF5', '#FF4632'
-];
+const coloresEditoriales = ['#d66f52', '#527a70', '#9a7b4f', '#6c668f', '#b25e58', '#3f6d77'];
 
 const Explorar = () => {
   // Estados para Géneros
@@ -99,7 +96,10 @@ const Explorar = () => {
       <Navegacion />
 
       <div style={estilos.contenido}>
-        
+        <section style={estilos.introExplorar}>
+          <div><p style={estilos.sectionEyebrow}>DESCUBRIMIENTO</p><h1 style={estilos.tituloPrincipal}>Encuentra tu próxima historia.</h1><p style={estilos.introTexto}>Explora por género o busca una lectura concreta. Tu siguiente libro empieza aquí.</p></div>
+          <span style={estilos.introMarca}>glancd<span style={estilos.puntoMarca}>.</span><small style={estilos.lemaMarca}>curaduría para leer despacio</small></span>
+        </section>
         {/* BARRA DE BÚSQUEDA */}
         <div style={estilos.contenedorBusqueda}>
           <form onSubmit={manejarBusqueda} style={estilos.formulario}>
@@ -173,7 +173,7 @@ const Explorar = () => {
         ) : (
           /* VISTA NORMAL DE GÉNEROS (Si no hay búsqueda activa) */
           <div>
-            <h1 style={estilos.titulo}>Explorar todo</h1>
+            <div style={estilos.tituloSeccion}><h2 style={estilos.titulo}>Explorar por género</h2><span style={estilos.contador}>{generos.length} categorías</span></div>
             
             {cargandoGeneros && <div style={estilos.mensaje}>Cargando géneros...</div>}
             {errorGeneros && <div style={{...estilos.mensaje, color: '#e07a5f'}}>{errorGeneros}</div>}
@@ -181,13 +181,10 @@ const Explorar = () => {
             {!cargandoGeneros && !errorGeneros && (
               <div style={estilos.gridGeneros}>
                 {generos.map((genero, index) => {
-                  const colorFondo = coloresSpotify[index % coloresSpotify.length];
+                  const colorFondo = coloresEditoriales[index % coloresEditoriales.length];
                   return (
                     <button key={genero.id} type="button" onClick={() => seleccionarGenero(genero)} style={{ ...estilos.tarjetaGenero, backgroundColor: colorFondo }}>
-                      <h3 style={estilos.nombreGenero}>{genero.nombre}</h3>
-                      <div style={estilos.contenedorPortadaMock}>
-                        <div style={estilos.portadaMock}>Portada</div> 
-                      </div>
+                      <span style={estilos.numeroGenero}>{String(index + 1).padStart(2, '0')}</span><h3 style={estilos.nombreGenero}>{genero.nombre}</h3><span style={estilos.accionGenero}>Ver lecturas <b>→</b></span>
                     </button>
                   );
                 })}
@@ -205,6 +202,14 @@ const Explorar = () => {
 const estilos = {
   contenedorPagina: { backgroundColor: '#0f1e19', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' },
   contenido: { padding: '40px 50px', maxWidth: '1400px', margin: '0 auto', width: '100%', boxSizing: 'border-box', flex: 1, color: '#ffffff' },
+  introExplorar: { display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: '24px', minHeight: '285px', padding: '34px 42px', marginBottom: '24px', borderRadius: '18px', background: 'radial-gradient(circle at 90% 45%, rgba(224,122,95,.13), transparent 28%), linear-gradient(120deg, #18382e, #234c40)', border: '1px solid rgba(251,249,241,.1)', overflow: 'hidden' },
+  tituloPrincipal: { fontFamily: 'Georgia, serif', fontSize: 'clamp(2rem, 4vw, 3.35rem)', lineHeight: 1.04, maxWidth: '600px', margin: '8px 0 12px', letterSpacing: '-1px' },
+  introTexto: { color: '#c2d0ca', fontSize: '1.05rem', maxWidth: '560px', margin: 0, lineHeight: 1.5 },
+  introMarca: { color: 'rgba(251,249,241,.22)', fontFamily: 'Georgia,serif', fontSize: 'clamp(2.6rem, 5vw, 4.5rem)', lineHeight: .9, textAlign: 'right', userSelect: 'none', transform: 'rotate(-5deg)', marginRight: '22px' },
+  puntoMarca: { color: '#e07a5f' },
+  lemaMarca: { display: 'block', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif', fontSize: '0.72rem', letterSpacing: '1px', marginTop: '10px', opacity: .8 },
+  contador: { color: '#8f9b95', fontSize: '.85rem' },
+  tituloSeccion: { display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', borderBottom: '1px solid rgba(251,249,241,.12)', marginBottom: '22px' },
   
   // Estilos Búsqueda
   contenedorBusqueda: { marginBottom: '40px', display: 'flex', justifyContent: 'center' },
@@ -219,10 +224,10 @@ const estilos = {
   
   // Grid Géneros
   gridGeneros: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '24px' },
-  tarjetaGenero: { position: 'relative', borderRadius: '8px', overflow: 'hidden', aspectRatio: '1 / 1', cursor: 'pointer', padding: '16px', border: 'none', transition: 'transform 0.2s ease', textAlign: 'left' },
-  nombreGenero: { margin: 0, fontSize: '22px', fontWeight: '700', wordBreak: 'break-word', maxWidth: '100%', zIndex: 2, position: 'relative', color: '#ffffff' },
-  contenedorPortadaMock: { position: 'absolute', bottom: '-15px', right: '-20px', width: '110px', height: '150px', transform: 'rotate(25deg)', boxShadow: '0 8px 16px rgba(0,0,0,0.4)', zIndex: 1 },
-  portadaMock: { width: '100%', height: '100%', backgroundColor: '#162c25', color: '#8f9b95', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 'bold', border: '1px solid rgba(251, 249, 241, 0.1)' },
+  tarjetaGenero: { position: 'relative', borderRadius: '14px', overflow: 'hidden', minHeight: '180px', cursor: 'pointer', padding: '22px', border: '1px solid rgba(251,249,241,.15)', transition: 'transform 0.2s ease, box-shadow .2s ease', textAlign: 'left', color: '#fff', boxShadow: '0 12px 28px rgba(0,0,0,.18)' },
+  numeroGenero: { display: 'block', fontSize: '12px', opacity: .7, letterSpacing: 2, marginBottom: '38px' },
+  nombreGenero: { margin: 0, fontFamily: 'Georgia,serif', fontSize: '25px', fontWeight: '600', wordBreak: 'break-word', maxWidth: '100%', position: 'relative' },
+  accionGenero: { display: 'block', marginTop: '18px', fontSize: '12px', opacity: .82, letterSpacing: .5 },
   
   // Grid Resultados (Libros)
   gridLibros: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '24px' },

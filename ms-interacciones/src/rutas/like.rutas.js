@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { verificarLikeLibro, toggleLikeLibro, obtenerBiblioteca } from '../controladores/like.controlador.js';
+import { estadoLectura, alternarLectura } from '../controladores/lectura.controlador.js';
 import validarToken from '../intermediarios/validarToken.js';
 
 const router = Router();
@@ -12,5 +13,8 @@ router.post('/likes/libros', validarToken, toggleLikeLibro);
 
 // GET /api/interacciones/biblioteca
 router.get('/biblioteca', validarToken, obtenerBiblioteca);
+
+router.get('/lectura/estado', validarToken, estadoLectura);
+router.post('/lectura', validarToken, alternarLectura);
 
 export default router;

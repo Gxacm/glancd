@@ -14,8 +14,12 @@ const Dashboard = () => {
   const [secciones, setSecciones] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [librosGuardados, setLibrosGuardados] = useState(() => new Set());
+  const [actualizandoLike, setActualizandoLike] = useState(null);
 
   const urlRecomendador = import.meta.env.VITE_API_RECOMENDADOR || 'http://localhost:8005';
+  const urlLibros = import.meta.env.VITE_API_LIBROS || 'http://localhost:8001';
+  const urlInteracciones = import.meta.env.VITE_API_INTERACCIONES || 'http://localhost:8003';
 
   useEffect(() => {
     const token = localStorage.getItem('token_glancd');
@@ -26,19 +30,65 @@ const Dashboard = () => {
       return; 
     }
 
-    // Cargar recomendaciones por género de la API
-    axios.get(`${urlRecomendador}/api/recomendaciones/`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then((respuesta) => {
-        setSecciones(respuesta.data);
+    const auth = { headers: { Authorization: `Bearer ${token}` } };
+    Promise.allSettled([
+      axios.get(`${urlRecomendador}/api/recomendaciones/`, auth),
+      axios.get(`${urlInteracciones}/api/interacciones/biblioteca`, auth),
+    ])
+      .then(([recomendaciones, biblioteca]) => {
+        if (recomendaciones.status === 'fulfilled') setSecciones(recomendaciones.value.data);
+        else throw recomendaciones.reason;
+        if (biblioteca.status === 'fulfilled') setLibrosGuardados(new Set(biblioteca.value.data.flatMap((libro) => [libro.id, libro.google_id].filter(Boolean))));
       })
       .catch((err) => {
-        console.error('Error cargando recomendaciones:', err);
+        console.error('Error cargando recomendaciones o biblioteca:', err);
         setError('No pudimos cargar tus recomendaciones personalizadas. Inténtalo de nuevo.');
       })
       .finally(() => setCargando(false));
-  }, [navigate, urlRecomendador]);
+  }, [navigate, urlInteracciones, urlRecomendador]);
+
+  const alternarLike = async (event, libro) => {
+    event.stopPropagation();
+    const token = localStorage.getItem('token_glancd');
+    if (!token || actualizandoLike) return;
+    const identificador = libro.google_id || libro.id;
+    const estabaGuardado = librosGuardados.has(identificador);
+    setLibrosGuardados((actual) => {
+      const siguiente = new Set(actual);
+      if (estabaGuardado) siguiente.delete(identificador); else siguiente.add(identificador);
+      return siguiente;
+    });
+    setActualizandoLike(identificador);
+    try {
+      let libroId = libro.id;
+      const esUuid = typeof libroId === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(libroId);
+      if (!esUuid) {
+        const guardado = await axios.post(`${urlLibros}/api/libros/`, {
+          titulo: libro.titulo,
+          sinopsis: libro.sinopsis || 'Sin sinopsis',
+          url_portada: libro.url_portada,
+          google_id: libro.google_id || libro.id,
+          nombre_autor: libro.nombre_autor || 'Autor desconocido',
+        }, { headers: { Authorization: `Bearer ${token}` } });
+        libroId = guardado.data.id;
+      }
+      const respuesta = await axios.post(`${urlInteracciones}/api/interacciones/likes/libros`, { libro_id: libroId }, { headers: { Authorization: `Bearer ${token}` } });
+      setLibrosGuardados((actual) => {
+        const siguiente = new Set(actual);
+        if (respuesta.data.estado) { siguiente.add(libroId); siguiente.add(identificador); }
+        else { siguiente.delete(libroId); siguiente.delete(identificador); }
+        return siguiente;
+      });
+    } catch (err) {
+      console.error('Error actualizando like desde el panel:', err);
+      setLibrosGuardados((actual) => {
+        const siguiente = new Set(actual);
+        if (estabaGuardado) siguiente.add(identificador); else siguiente.delete(identificador);
+        return siguiente;
+      });
+      setError(err.response?.data?.detail || 'No pudimos actualizar tu biblioteca.');
+    } finally { setActualizandoLike(null); }
+  };
 
   if (!usuario) {
     return (
@@ -157,8 +207,8 @@ const Dashboard = () => {
                       
                       <div style={estilos.cardMeta}>
                         <span style={estilos.tagOrigen}>{libro.origen || 'Recomendación'}</span>
-                        <button style={estilos.saveBtn} aria-label={`Guardar ${libro.titulo}`}>
-                          ♡
+                        <button onClick={(event) => alternarLike(event, libro)} style={{ ...estilos.saveBtn, color: librosGuardados.has(libro.google_id || libro.id) ? '#e07a5f' : '#8f9b95' }} aria-label={`${librosGuardados.has(libro.google_id || libro.id) ? 'Quitar' : 'Guardar'} ${libro.titulo}`} disabled={actualizandoLike === (libro.google_id || libro.id)}>
+                          {librosGuardados.has(libro.google_id || libro.id) ? '♥' : '♡'}
                         </button>
                       </div>
                     </div>

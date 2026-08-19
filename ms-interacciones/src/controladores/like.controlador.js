@@ -63,11 +63,14 @@ export const obtenerBiblioteca = async (req, res) => {
                 l.google_id, l.cantidad_paginas, l.fecha_publicacion,
                 a.id AS autor_id, a.nombre_completo AS nombre_autor,
                 g.id AS genero_id, g.nombre AS nombre_genero,
+                h.leido_en,
+                (h.id IS NOT NULL) AS leido,
                 m.creado_en AS guardado_en
             FROM me_gusta_libros m
             JOIN libros l ON l.id = m.libro_id
             JOIN autores a ON a.id = l.autor_id
             LEFT JOIN generos g ON g.id = l.genero_id
+            LEFT JOIN historial_lectura h ON h.usuario_id = m.usuario_id AND h.libro_id = l.id AND h.estado = 'leido'
             WHERE m.usuario_id = $1
             ORDER BY m.creado_en DESC
         `;

@@ -82,6 +82,7 @@ const MiBiblioteca = () => {
                 <div style={estilos.cardInfo}>
                   <h3 style={estilos.libroTitulo}>{libro.titulo}</h3>
                   <p style={estilos.libroAutor}>{libro.nombre_autor}</p>
+                  <span style={{ ...estilos.estadoLectura, ...(libro.leido ? estilos.estadoLeido : {}) }}>{libro.leido ? '✓ Leído' : 'Pendiente'}</span>
                 </div>
               </article>
             ))}
@@ -115,6 +116,8 @@ const estilos = {
   cardInfo: { padding: '12px', display: 'flex', flexDirection: 'column', flex: 1 },
   libroTitulo: { fontSize: '0.95rem', color: '#fbf9f1', margin: '0 0 4px 0', lineHeight: '1.2', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
   libroAutor: { fontSize: '0.75rem', color: '#8f9b95', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }
+  ,estadoLectura: { display: 'inline-block', marginTop: '9px', width: 'fit-content', padding: '4px 8px', borderRadius: '99px', background: 'rgba(251,249,241,.06)', color: '#8f9b95', fontSize: '.7rem' },
+  estadoLeido: { background: 'rgba(224,122,95,.16)', color: '#e07a5f' }
 };
 
 export default MiBiblioteca;

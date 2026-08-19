@@ -15,6 +15,8 @@ const DetalleLibro = () => {
   const [meGusta, setMeGusta] = useState(false);
   const [animandoCorazon, setAnimandoCorazon] = useState(false);
   const [guardandoLike, setGuardandoLike] = useState(false);
+  const [marcadoLeido, setMarcadoLeido] = useState(false);
+  const [actualizandoLectura, setActualizandoLectura] = useState(false);
 
   const urlBaseLibros = import.meta.env.VITE_API_LIBROS || 'http://localhost:8001';
   const urlInteracciones = import.meta.env.VITE_API_INTERACCIONES || 'http://localhost:8003';
@@ -69,6 +71,14 @@ const DetalleLibro = () => {
     }
   }, [libro, token, urlInteracciones]);
 
+  useEffect(() => {
+    if (!libro || !esUuid(libro.id) || !token) return;
+    axios.get(`${urlInteracciones}/api/interacciones/lectura/estado`, {
+      params: { libro_id: libro.id }, headers: { Authorization: `Bearer ${token}` },
+    }).then((respuesta) => setMarcadoLeido(Boolean(respuesta.data.leido)))
+      .catch((err) => console.error('Error consultando lectura:', err));
+  }, [libro, token, urlInteracciones]);
+
   // ------------------------------------------------------------------
   // 5. AHORA SÍ, LOS RETORNOS CONDICIONALES
   // ------------------------------------------------------------------
@@ -108,6 +118,9 @@ const DetalleLibro = () => {
     }
 
     if (guardandoLike) return;
+    const estadoPrevio = meGusta;
+    // Cambia inmediatamente; la petición confirma o revierte el estado.
+    setMeGusta(!estadoPrevio);
     setGuardandoLike(true);
     setAnimandoCorazon(true);
     setTimeout(() => setAnimandoCorazon(false), 300);
@@ -127,6 +140,7 @@ const DetalleLibro = () => {
 
     } catch (error) {
       console.error("Error en el proceso de Me gusta:", error);
+      setMeGusta(estadoPrevio);
       alert(error.response?.data?.mensaje || "No pudimos actualizar tu biblioteca. Inténtalo nuevamente.");
     } finally { setGuardandoLike(false); }
   };
@@ -164,6 +178,23 @@ const DetalleLibro = () => {
       console.error('Error al preparar el libro para la reseña:', err);
       alert('No se pudo preparar el libro para guardar la reseña. Inténtalo nuevamente.');
     }
+  };
+
+  const alternarLectura = async () => {
+    if (!token || actualizandoLectura) {
+      if (!token) alert('Debes iniciar sesión para registrar tu lectura.');
+      return;
+    }
+    const estadoPrevio = marcadoLeido;
+    setMarcadoLeido(!estadoPrevio);
+    setActualizandoLectura(true);
+    try {
+      const respuesta = await axios.post(`${urlInteracciones}/api/interacciones/lectura`, { libro_id: await asegurarLibroLocal() }, { headers: { Authorization: `Bearer ${token}` } });
+      setMarcadoLeido(Boolean(respuesta.data.leido));
+    } catch (err) {
+      setMarcadoLeido(estadoPrevio);
+      alert(err.response?.data?.mensaje || 'No se pudo actualizar tu historial de lectura.');
+    } finally { setActualizandoLectura(false); }
   };
 
   // VISTA PRINCIPAL CON LOS DATOS DEL LIBRO
@@ -255,6 +286,9 @@ const DetalleLibro = () => {
 
             <div style={estilos.accionesContainer}>
                 <button style={estilos.btnSecundario} onClick={manejarEscribirResena}>Escribir Reseña</button>
+                <button style={{ ...estilos.btnLectura, ...(marcadoLeido ? estilos.btnLecturaActiva : {}) }} onClick={alternarLectura} disabled={actualizandoLectura}>
+                  {marcadoLeido ? '✓ Leído' : 'Marcar como leído'}
+                </button>
             </div>
           </div>
         </div>
@@ -284,6 +318,8 @@ const estilos = {
   accionesContainer: { display: 'flex', gap: '16px' },
   btnPrincipal: { backgroundColor: '#e07a5f', color: '#fbf9f1', border: 'none', padding: '12px 24px', borderRadius: '6px', fontSize: '1rem', cursor: 'pointer', fontWeight: '600' },
   btnSecundario: { backgroundColor: 'transparent', color: '#fbf9f1', border: '1px solid rgba(251, 249, 241, 0.2)', padding: '12px 24px', borderRadius: '6px', fontSize: '1rem', cursor: 'pointer', fontWeight: '600' },
+  btnLectura: { backgroundColor: 'rgba(224, 122, 95, 0.12)', color: '#e07a5f', border: '1px solid rgba(224, 122, 95, 0.45)', padding: '12px 24px', borderRadius: '6px', fontSize: '1rem', cursor: 'pointer', fontWeight: '600' },
+  btnLecturaActiva: { backgroundColor: '#e07a5f', color: '#fff', borderColor: '#e07a5f' },
   errorBox: { textAlign: 'center', padding: '50px', backgroundColor: '#162c25', borderRadius: '12px', border: '1px dashed #e07a5f' },
   btnCorazon: {
   background: 'rgba(251, 249, 241, 0.05)',
