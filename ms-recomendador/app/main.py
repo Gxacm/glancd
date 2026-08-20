@@ -5,7 +5,7 @@ from app.rutas.recomendacion_rutas import router
 app = FastAPI(title='Microservicio de Recomendaciones - GLANCD')
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000'],
+    allow_origins=['http://localhost:3000', 'https://glancd.onrender.com'],
     allow_methods=['GET'],
     allow_headers=['Authorization', 'Content-Type'],
 )
